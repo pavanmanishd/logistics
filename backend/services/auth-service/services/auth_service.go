@@ -19,7 +19,7 @@ func InitService() {
 		panic(err)
 	}
 
-	authRepo = repositories.NewAuthRepository(client.Database("logistics").Collection("auths"))
+	authRepo = repositories.NewAuthRepository(client.Database("logistics").Collection("auth"))
 }
 
 func CreateAuth(auth models.Auth) error {
