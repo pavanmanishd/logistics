@@ -1,0 +1,60 @@
+package repositories
+
+import (
+	"booking-service/models"
+	"context"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+)
+
+type BookingRepository struct {
+	collection *mongo.Collection
+}
+
+func NewBookingRepository(collection *mongo.Collection) *BookingRepository {
+	return &BookingRepository{collection: collection}
+}
+
+func (repo *BookingRepository) CreateBooking(booking models.Booking) error {
+	_, err := repo.collection.InsertOne(context.TODO(), booking)
+	return err
+}
+
+func (repo *BookingRepository) FindBookingByID(id string) (models.Booking, error) {
+	var booking models.Booking
+	err := repo.collection.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&booking)
+	return booking, err
+}
+
+func (repo *BookingRepository) FindBookingByUserID(userID string) ([]models.Booking, error) {
+	var bookings []models.Booking
+	cursor, err := repo.collection.Find(context.TODO(), bson.M{"user_id": userID})
+	if err != nil {
+		return nil, err
+	}
+
+	err = cursor.All(context.TODO(), &bookings)
+	return bookings, err
+}
+
+func (repo *BookingRepository) FindBookingByDriverID(driverID string) ([]models.Booking, error) {
+	var bookings []models.Booking
+	cursor, err := repo.collection.Find(context.TODO(), bson.M{"driver_id": driverID})
+	if err != nil {
+		return nil, err
+	}
+
+	err = cursor.All(context.TODO(), &bookings)
+	return bookings, err
+}
+
+func (repo *BookingRepository) UpdateBookingStatus(id string, status string) error {
+	_, err := repo.collection.UpdateOne(context.TODO(), bson.M{"_id": id}, bson.M{"$set": bson.M{"status": status}})
+	return err
+}
+
+func (repo *BookingRepository) DeleteBooking(id string) error {
+	_, err := repo.collection.DeleteOne(context.TODO(), bson.M{"_id": id})
+	return err
+}
