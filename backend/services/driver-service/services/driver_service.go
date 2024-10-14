@@ -25,3 +25,7 @@ func InitService() {
 func CreateDriver(driver models.Driver) error {
 	return driverRepo.CreateDriver(driver)
 }
+
+func UpdateLocation(driverID string, longitude, latitude float64) error {
+	return driverRepo.UpdateLocation(driverID, longitude, latitude)
+}

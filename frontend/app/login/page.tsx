@@ -19,6 +19,7 @@ export default function Login() {
             .then((response) => {
                 console.log(response.data);
                 localStorage.setItem('token', response.data.token);
+                localStorage.setItem('id', response.data.id);
                 router.replace('/');
             })
             .catch((error) => {

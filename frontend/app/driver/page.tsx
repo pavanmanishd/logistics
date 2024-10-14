@@ -10,7 +10,16 @@ interface Location {
 const LocationTracker: React.FC = () => {
     const [ws, setWs] = useState<WebSocket | null>(null);
     const [location, setLocation] = useState<Location>({ latitude: 0, longitude: 0 });
-
+    const [driverId, setDriverId] = useState<string | null>(null);
+    
+    useEffect(() => {
+        // Get driver ID from local storage
+        const driverId = localStorage.getItem("id");
+        if (driverId) {
+            setDriverId(driverId);
+        }
+    }, []);
+    
     useEffect(() => {
         // Open WebSocket connection
         const socket = new WebSocket("ws://localhost:8080/ws/location");
@@ -53,12 +62,16 @@ const LocationTracker: React.FC = () => {
                 const jsonData = JSON.stringify({
                     latitude: latitude,
                     longitude: longitude,
-                    driver_id: "driver123" // Replace with real driver ID
+                    driver_id: driverId,
                 });
 
                 console.log("Sending location:", jsonData);
 
                 if (ws && ws.readyState === WebSocket.OPEN) {
+                    if (!driverId) {
+                        console.error("Driver ID is not set.");
+                        return;
+                    }
                     ws.send(jsonData);
                 } else {
                     console.error("WebSocket connection is not open.");
