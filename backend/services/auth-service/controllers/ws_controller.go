@@ -14,20 +14,47 @@ var upgrader = websocket.Upgrader{
     },
 }
 
-func LocationWebSocket(c *gin.Context) {
-    conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+// redirect to the location websocket
+func HandleLocationWSProxy(c *gin.Context) {
+    clienConn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
     if err != nil {
-        log.Println("Failed to set websocket upgrade: ", err)
+        log.Println(err)
         return
     }
-    defer conn.Close()
+    defer clienConn.Close()
+    
+
+    driverLocationWS := "ws://localhost:8081/ws/location"
+    serverConn, _, err := websocket.DefaultDialer.Dial(driverLocationWS, nil)
+    if err != nil {
+        log.Println(err)
+        return
+    }
+    defer serverConn.Close()
+
+    go func() {
+        for {
+            _, message, err := serverConn.ReadMessage()
+            if err != nil {
+                log.Println(err)
+                return
+            }
+            if err := clienConn.WriteMessage(websocket.TextMessage, message); err != nil {
+                log.Println(err)
+                return
+            }
+        }
+    }()
 
     for {
-        _, message, err := conn.ReadMessage()
+        _, message, err := clienConn.ReadMessage()
         if err != nil {
-            log.Println("read:", err)
-            break
+            log.Println(err)
+            return
         }
-        log.Printf("Received location update: %s", message)
+        if err := serverConn.WriteMessage(websocket.TextMessage, message); err != nil {
+            log.Println(err)
+            return
+        }
     }
 }

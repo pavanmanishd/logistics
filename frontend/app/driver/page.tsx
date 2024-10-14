@@ -13,9 +13,16 @@ const LocationTracker: React.FC = () => {
     useEffect(() => {
         // Open WebSocket connection
         const socket = new WebSocket("ws://localhost:8080/ws/location");
-        setWs(socket);
 
-        sendLocation();
+        socket.onopen = () => {
+            console.log("WebSocket connection established.");
+            setWs(socket); // Set WebSocket only after the connection is established
+        };
+
+        socket.onerror = (error) => {
+            console.error("WebSocket error:", error);
+        };
+
         // Clean up WebSocket connection on component unmount
         return () => {
             socket.close();
@@ -23,16 +30,18 @@ const LocationTracker: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        // Set interval to send location every 5 seconds
-        const interval = setInterval(() => {
-            sendLocation();
-        }, 5000); // 5000 ms = 5 seconds
+        // Send location every 5 seconds only if the WebSocket connection is ready
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            const interval = setInterval(() => {
+                sendLocation();
+            }, 5000);
 
-        // Clear interval on component unmount
-        return () => {
-            clearInterval(interval);
-        };
-    }, [ws, location]); // Dependency array to ensure it sends updated location
+            // Clear interval on component unmount
+            return () => {
+                clearInterval(interval);
+            };
+        }
+    }, [ws, ws?.readyState, location]); // Depend on ws and location
 
     const sendLocation = () => {
         if (navigator.geolocation) {
@@ -45,11 +54,13 @@ const LocationTracker: React.FC = () => {
                     longitude: longitude,
                     driver_id: "driver123" // Replace with real driver ID
                 });
-                
+
                 console.log("Sending location:", jsonData);
 
-                if (ws) {
+                if (ws && ws.readyState === WebSocket.OPEN) {
                     ws.send(jsonData);
+                } else {
+                    console.error("WebSocket connection is not open.");
                 }
             });
         } else {

@@ -15,4 +15,5 @@ func SetupRoutes(router *gin.Engine) {
 	router.GET("/booking/:id", controllers.GetBookingByID)
 	router.GET("/booking/user/:userID", controllers.GetBookingByUserID)
 	router.GET("/booking/driver/:driverID", controllers.GetBookingByDriverID)
+	router.GET("/ws/location", controllers.LocationWebSocket)
 }
