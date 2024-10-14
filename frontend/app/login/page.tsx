@@ -20,6 +20,7 @@ export default function Login() {
                 console.log(response.data);
                 localStorage.setItem('token', response.data.token);
                 localStorage.setItem('id', response.data.id);
+                localStorage.setItem('role', response.data.role);
                 router.replace('/');
             })
             .catch((error) => {

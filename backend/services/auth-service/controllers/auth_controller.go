@@ -53,7 +53,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": token, "id": auth.ID.Hex()})
+	c.JSON(http.StatusOK, gin.H{"token": token, "id": auth.ID.Hex(), "role": auth.Role})
 }
 
 func Health(c *gin.Context) {

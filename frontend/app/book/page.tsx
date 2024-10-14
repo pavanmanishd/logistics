@@ -2,7 +2,7 @@ import ProtectedRoute from "@/validation/ProtectedRoute"
 
 export default function Book() {
     return (
-        <ProtectedRoute>
+        <ProtectedRoute element={
             <div>
                 <h1>Book</h1>
                 <form>
@@ -20,6 +20,6 @@ export default function Book() {
                     </div>
                 </form>
             </div>
-        </ProtectedRoute>
+        } />
     );
 }
