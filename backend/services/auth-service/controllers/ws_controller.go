@@ -24,7 +24,7 @@ func HandleLocationWSProxy(c *gin.Context) {
     defer clienConn.Close()
     
 
-    driverLocationWS := "ws://localhost:8081/ws/location"
+    driverLocationWS := "ws://localhost:8082/ws/location"
     serverConn, _, err := websocket.DefaultDialer.Dial(driverLocationWS, nil)
     if err != nil {
         log.Println(err)

@@ -11,4 +11,5 @@ func SetupRoutes(router *gin.Engine) {
 
 	router.GET("/health", controllers.Health)
 	router.POST("/driver", controllers.CreateDriver)
+	router.GET("/ws/location", controllers.LocationWebSocket)
 }
