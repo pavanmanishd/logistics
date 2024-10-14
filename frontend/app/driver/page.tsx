@@ -70,13 +70,13 @@ const LocationTracker: React.FC = () => {
     };
 
     return (
-        <ProtectedRoute>
+        <ProtectedRoute element={
             <div>
                 <h3>Location Tracker</h3>
                 <p>Latitude: {location.latitude}</p>
                 <p>Longitude: {location.longitude}</p>
             </div>
-        </ProtectedRoute>
+        } />
     );
 };
 

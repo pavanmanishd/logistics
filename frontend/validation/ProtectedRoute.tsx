@@ -3,29 +3,21 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface ProtectedRouteProps {
-    children: React.ReactNode;
+    element: JSX.Element;
 }
 
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ element }) => {
     const router = useRouter();
-    let isAuthenticated = false;
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        
-        if (token) {
-            isAuthenticated = true;
-        }
+        const token = localStorage.getItem("token");
 
-        if (!isAuthenticated) {
-            router.replace('/login');
+        if (!token) {
+            router.push("/login");
         }
-    }, [router]);
+    }, []);
 
-    if (isAuthenticated) {
-        return <>{children}</>;
-    }
-    return null;
+    return element;
 };
 
 export default ProtectedRoute;
