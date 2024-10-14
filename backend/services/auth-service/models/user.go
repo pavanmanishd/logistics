@@ -11,3 +11,10 @@ type Auth struct {
 	Password string             `bson:"password" json:"password"`
 	Role     string             `bson:"role" json:"role"`
 }
+
+type AdditionalAuth struct {
+	ID       primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
+	Email    string             `bson:"email" json:"email"`
+	VehicleNo string             `bson:"vehicle_no" json:"vehicle_no"`
+	LicenseNo string             `bson:"license_no" json:"license_no"`
+}

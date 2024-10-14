@@ -9,4 +9,6 @@ type Driver struct {
 	VehicleNo string             `bson:"vehicle_no" json:"vehicle_no"`
 	LicenseNo string             `bson:"license_no" json:"license_no"`
 	Avaliable bool               `bson:"avaliable" json:"avaliable"`
+	Latitude  float64            `bson:"latitude" json:"latitude"`
+	Longitude float64            `bson:"longitude" json:"longitude"`
 }

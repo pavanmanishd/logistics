@@ -9,7 +9,9 @@ export default function Register() {
     const [email, setEmail] = useState<string>('');
     const [password, setPassword] = useState<string>('');
     const [confirmPassword, setConfirmPassword] = useState<string>('');
-    const [role, setRole] = useState<string>('customer'); // Default value is 'customer'
+    const [role, setRole] = useState<string>('customer');
+    const [license, setLicense] = useState<string>('');
+    const [vehicle, setVehicle] = useState<string>('');
     const router = useRouter();
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -27,7 +29,22 @@ export default function Register() {
         })
             .then((response) => {
                 console.log(response.data);
-                router.replace('/login');
+                if (role === 'customer') {
+                    router.replace('/login');
+                } else {
+                    axios.post(`${authURL}/register/additional`, {
+                        license_no: license,
+                        vehicle_no: vehicle,
+                        email,
+                    })
+                        .then((response) => {
+                            console.log(response.data);
+                            router.replace('/login');
+                        })
+                        .catch((error) => {
+                            console.error(error);
+                        });
+                }
             })
             .catch((error) => {
                 console.error(error);
@@ -85,6 +102,29 @@ export default function Register() {
                         <option value="driver">Driver</option>
                     </select>
                 </div>
+                {(role == "driver") && (
+                    <div>
+                        <div>
+                            <label htmlFor="license">License No</label>
+                            <input
+                                type="text"
+                                id="license"
+                                value={license}
+                                onChange={(e) => setLicense(e.target.value)} // Controlled input
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="vehicle">Vehicle No</label>
+                            <input
+                                type="text"
+                                id="vehicle"
+                                value={vehicle}
+                                onChange={(e) => setVehicle(e.target.value)} // Controlled input
+                            />
+                        </div>
+                    </div>
+                )}
+
                 <button type="submit">Register</button>
             </form>
         </div>

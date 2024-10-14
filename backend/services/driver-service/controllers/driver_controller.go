@@ -14,6 +14,10 @@ func CreateDriver(c *gin.Context) {
 		return
 	}
 
+	driver.Avaliable = true
+	driver.Latitude = 0
+	driver.Longitude = 0
+
 	err := services.CreateDriver(driver)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})

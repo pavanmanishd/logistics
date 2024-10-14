@@ -4,6 +4,9 @@ import (
 	"auth-service/models"
 	"auth-service/services"
 	"auth-service/utils"
+	"bytes"
+	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -77,4 +80,42 @@ func GetAuthByJwtToken(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, auth)
+}
+
+func RegisterAdditional(c *gin.Context) {
+	var input models.AdditionalAuth
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	auth, err := services.FindAuthByEmail(input.Email)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Auth not found"})
+		return
+	}
+
+	input.ID = auth.ID
+
+	if err := sendToDriverService(input); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating driver"})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"message": "Driver created successfully"})
+}
+
+func sendToDriverService(input models.AdditionalAuth) error {
+	url := "http://localhost:8082/new"
+	jsonData, err := json.Marshal(input)
+	log.Printf("Sending data to driver service: %s", string(jsonData))
+	if err != nil {
+		return err
+	}
+
+	_, err = http.Post(url, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
