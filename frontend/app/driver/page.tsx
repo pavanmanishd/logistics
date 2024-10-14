@@ -1,4 +1,5 @@
 "use client";
+import ProtectedRoute from '@/validation/ProtectedRoute';
 import React, { useEffect, useState } from 'react';
 
 interface Location {
@@ -69,11 +70,13 @@ const LocationTracker: React.FC = () => {
     };
 
     return (
-        <div>
-            <h3>Location Tracker</h3>
-            <p>Latitude: {location.latitude}</p>
-            <p>Longitude: {location.longitude}</p>
-        </div>
+        <ProtectedRoute>
+            <div>
+                <h3>Location Tracker</h3>
+                <p>Latitude: {location.latitude}</p>
+                <p>Longitude: {location.longitude}</p>
+            </div>
+        </ProtectedRoute>
     );
 };
 

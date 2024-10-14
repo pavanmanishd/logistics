@@ -1,9 +1,10 @@
-import Image from "next/image";
-
+import ProtectedRoute from "@/validation/ProtectedRoute";
 export default function Home() {
   return (
-    <div>
-      Home
-    </div>
+    <ProtectedRoute>
+      <div>
+        Home
+      </div>
+    </ProtectedRoute>
   );
 }
