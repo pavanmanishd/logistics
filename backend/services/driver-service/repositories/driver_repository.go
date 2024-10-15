@@ -46,6 +46,28 @@ func (repo *DriverRepository) UpdateLocation(id string, longitude, latitude floa
 	if err != nil {
 		return err
 	}
-	_, err = repo.collection.UpdateOne(context.TODO(), bson.M{"_id": objectId}, bson.M{"$set": bson.M{"latitude": latitude, "longitude": longitude}})
+	_, err = repo.collection.UpdateOne(context.TODO(), bson.M{"_id": objectId}, bson.M{"$set": bson.M{"location": models.Point{Type: "Point", Coordinates: [2]float64{longitude, latitude}}}})
 	return err
+}
+
+func (repo *DriverRepository) FindDriversInRadius(longitude, latitude, radius float64) ([]models.Driver, error) {
+	cursor, err := repo.collection.Find(context.TODO(), bson.M{"location": bson.M{"$near": bson.M{"$geometry": bson.M{"type": "Point", "coordinates": [2]float64{longitude, latitude}}, "$maxDistance": radius}}})
+	if err != nil {
+		log.Printf("Error finding drivers in radius: %s", err.Error())
+		return nil, err
+	}
+	defer cursor.Close(context.Background())
+	log.Printf("Found %d drivers in radius", cursor.RemainingBatchLength())
+	var drivers []models.Driver
+	err = cursor.All(context.Background(), &drivers)
+	return drivers, err
+}
+
+func (repo *DriverRepository) CreateIndex() {
+	_, err := repo.collection.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
+		Keys: bson.M{"location": "2dsphere"},
+	})
+	if err != nil {
+		log.Printf("Error creating index: %s", err.Error())
+	}
 }

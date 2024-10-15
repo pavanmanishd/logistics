@@ -15,8 +15,9 @@ func CreateDriver(c *gin.Context) {
 	}
 
 	driver.Avaliable = true
-	driver.Latitude = 0
-	driver.Longitude = 0
+	driver.Location.Type = "Point"
+	driver.Location.Coordinates[0] = 0
+	driver.Location.Coordinates[1] = 0
 
 	err := services.CreateDriver(driver)
 	if err != nil {

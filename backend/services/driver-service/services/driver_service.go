@@ -20,6 +20,7 @@ func InitService() {
 	}
 
 	driverRepo = repositories.NewDriverRepository(client.Database("logistics").Collection("drivers"))
+	driverRepo.CreateIndex()
 }
 
 func CreateDriver(driver models.Driver) error {
@@ -28,4 +29,8 @@ func CreateDriver(driver models.Driver) error {
 
 func UpdateLocation(driverID string, longitude, latitude float64) error {
 	return driverRepo.UpdateLocation(driverID, longitude, latitude)
+}
+
+func FindDriversInRadius(longitude, latitude, radius float64) ([]models.Driver, error) {
+	return driverRepo.FindDriversInRadius(longitude, latitude, radius)
 }

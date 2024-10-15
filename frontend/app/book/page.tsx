@@ -1,7 +1,7 @@
 "use client";
 import ProtectedRoute from "@/validation/ProtectedRoute";
 import axios from "axios";
-import { useEffect, useState, useCallback, use } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 // Debounce function to limit API calls
 function debounce(func: Function, delay: number) {
@@ -15,6 +15,7 @@ function debounce(func: Function, delay: number) {
 }
 
 const accessToken = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
+const bookingAPIURL = "http://localhost:8081"; // Update with the actual booking API URL
 
 export default function Book() {
     const [source, setSource] = useState<string>("");
@@ -24,14 +25,21 @@ export default function Book() {
     const [selectedSource, setSelectedSource] = useState<any | null>(null);
     const [selectedDestination, setSelectedDestination] = useState<any | null>(null);
     const [fare, setFare] = useState<number | null>(null);
+    const [userId, setUserId] = useState<string | null>(null);
 
-    // Handle search functionality with debounce
+    useEffect(() => {
+        const userId = localStorage.getItem("id");
+        if (userId) {
+            setUserId(userId);
+        }
+    }, []);
+
+    // Debounced search function
     const search = async (text: string, type: "source" | "destination") => {
         if (!text) return;
 
         try {
             const response = await axios.get(`https://api.olamaps.io/places/v1/autocomplete?input=${text}&api_key=${accessToken}`);
-
             if (type === "source") {
                 setSourceSuggestions(response.data.predictions);
             } else if (type === "destination") {
@@ -42,11 +50,7 @@ export default function Book() {
         }
     };
 
-    useEffect(() => {
-        console.log(sourceSuggestions);
-    }, [sourceSuggestions]);
-
-    // Debounced search function
+    // Memoized debounce function
     const debouncedSearch = useCallback(debounce(search, 500), [accessToken]);
 
     // Handle source input change
@@ -65,24 +69,24 @@ export default function Book() {
 
     // Handle suggestion click for source
     const handleSourceClick = (suggestion: any) => {
-        setSource(suggestion.description); // Set input value to selected suggestion
-        setSelectedSource(suggestion); // Store the entire selected suggestion for further use
-        setSourceSuggestions([]); // Clear suggestions after selection
+        setSource(suggestion.description);
+        setSelectedSource(suggestion);
+        setSourceSuggestions([]);
     };
 
     // Handle suggestion click for destination
     const handleDestinationClick = (suggestion: any) => {
-        setDestination(suggestion.description); // Set input value to selected suggestion
-        setSelectedDestination(suggestion); // Store the entire selected suggestion for further use
-        setDestinationSuggestions([]); // Clear suggestions after selection
+        setDestination(suggestion.description);
+        setSelectedDestination(suggestion);
+        setDestinationSuggestions([]);
     };
 
     // Fetch distance and calculate fare
-    const fetchDistanceAndCalculateFare = async () => {
+    const fetchDistanceAndCalculateFare = useCallback(async () => {
         if (!selectedSource || !selectedDestination) return;
 
         try {
-            const sourceCoords = selectedSource.geometry.location; // Assuming geometry contains lat, lng
+            const sourceCoords = selectedSource.geometry.location;
             const destinationCoords = selectedDestination.geometry.location;
 
             const response = await axios.get(
@@ -90,31 +94,62 @@ export default function Book() {
             );
 
             const distanceInMeters = response.data.rows[0].elements[0].distance;
-            const distanceInKm = distanceInMeters / 1000;
-
-            // Calculate fare
+            const durationInSeconds = response.data.rows[0].elements[0].duration;
+            
             const baseFare = 40;
-            const costPerKm = 15;
-            const estimatedFare = baseFare + costPerKm * distanceInKm;
+            const costPerKm = 15; 
+            const costPerMinute = 2;
+            
+            const distanceInKm = distanceInMeters / 1000;
+            const durationInMinutes = durationInSeconds / 60;
+            
+            const estimatedFare = baseFare + (costPerKm * distanceInKm) + (costPerMinute * durationInMinutes);
 
             setFare(estimatedFare);
         } catch (error) {
             console.error("Error calculating distance and fare:", error);
         }
-    };
+    }, [selectedSource, selectedDestination]);
 
     useEffect(() => {
         fetchDistanceAndCalculateFare();
-    }, [selectedSource, selectedDestination]);
+    }, [selectedSource, selectedDestination, fetchDistanceAndCalculateFare]);
 
     // Handle form submission
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!source || !destination) {
-            alert("Please enter both source and destination.");
+        if (!selectedSource || !selectedDestination || fare === null) {
+            alert("Please enter both valid source and destination, and ensure fare is calculated.");
             return;
         }
 
+        try {
+            if (!userId) {
+                alert("User not authenticated!");
+                return;
+            }
+            const sourceLocation = {
+                longitude: selectedSource.geometry.location.lng,
+                latitude: selectedSource.geometry.location.lat,
+            };
+            const destinationLocation = {
+                longitude: selectedDestination.geometry.location.lng,
+                latitude: selectedDestination.geometry.location.lat,
+            };
+
+            const response = await axios.post(`${bookingAPIURL}/book`, {
+                user_id: userId,
+                source: sourceLocation,
+                destination: destinationLocation,
+                fare: fare,
+            });
+
+            alert("Booking successful!");
+            console.log("Booking successful:", response.data);
+        } catch (error) {
+            console.error("Error booking:", error);
+            alert("Error booking!");
+        }
     };
 
     return (
@@ -128,15 +163,14 @@ export default function Book() {
                             type="text"
                             id="Source"
                             value={source}
-                            onChange={handleSourceChange} // Trigger search while typing
+                            onChange={handleSourceChange}
                         />
-                        {/* Source suggestions */}
                         {sourceSuggestions.length > 0 && (
                             <ul>
                                 {sourceSuggestions.map((suggestion, index) => (
                                     <li 
                                         key={index}
-                                        onClick={() => handleSourceClick(suggestion)} // Handle selection
+                                        onClick={() => handleSourceClick(suggestion)} 
                                         style={{ cursor: 'pointer' }}
                                     >
                                         {suggestion.description}
@@ -151,15 +185,14 @@ export default function Book() {
                             type="text"
                             id="Destination"
                             value={destination}
-                            onChange={handleDestinationChange} // Trigger search while typing
+                            onChange={handleDestinationChange}
                         />
-                        {/* Destination suggestions */}
                         {destinationSuggestions.length > 0 && (
                             <ul>
                                 {destinationSuggestions.map((suggestion, index) => (
                                     <li 
                                         key={index}
-                                        onClick={() => handleDestinationClick(suggestion)} // Handle selection
+                                        onClick={() => handleDestinationClick(suggestion)} 
                                         style={{ cursor: 'pointer' }}
                                     >
                                         {suggestion.description}
@@ -169,7 +202,7 @@ export default function Book() {
                         )}
                     </div>
                     <div>
-                        <p>Estimated Fare: {fare ? `Rs.${fare.toFixed(2)}` : "N/A"}</p>
+                        <p>Estimated Fare: {fare !== null ? `Rs.${fare.toFixed(2)}` : "Calculating..."}</p>
                         <button type="submit">Book</button>
                     </div>
                 </form>
