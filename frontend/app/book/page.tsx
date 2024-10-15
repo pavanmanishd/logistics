@@ -1,7 +1,7 @@
 "use client";
 import ProtectedRoute from "@/validation/ProtectedRoute";
 import axios from "axios";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, use } from "react";
 
 // Debounce function to limit API calls
 function debounce(func: Function, delay: number) {
@@ -15,6 +15,7 @@ function debounce(func: Function, delay: number) {
 }
 
 const accessToken = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
+
 export default function Book() {
     const [source, setSource] = useState<string>("");
     const [destination, setDestination] = useState<string>("");
@@ -22,6 +23,7 @@ export default function Book() {
     const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>([]);
     const [selectedSource, setSelectedSource] = useState<any | null>(null);
     const [selectedDestination, setSelectedDestination] = useState<any | null>(null);
+    const [fare, setFare] = useState<number | null>(null);
 
     // Handle search functionality with debounce
     const search = async (text: string, type: "source" | "destination") => {
@@ -75,6 +77,36 @@ export default function Book() {
         setDestinationSuggestions([]); // Clear suggestions after selection
     };
 
+    // Fetch distance and calculate fare
+    const fetchDistanceAndCalculateFare = async () => {
+        if (!selectedSource || !selectedDestination) return;
+
+        try {
+            const sourceCoords = selectedSource.geometry.location; // Assuming geometry contains lat, lng
+            const destinationCoords = selectedDestination.geometry.location;
+
+            const response = await axios.get(
+                `https://api.olamaps.io/routing/v1/distanceMatrix?origins=${sourceCoords.lat},${sourceCoords.lng}&destinations=${destinationCoords.lat},${destinationCoords.lng}&api_key=${accessToken}`
+            );
+
+            const distanceInMeters = response.data.rows[0].elements[0].distance;
+            const distanceInKm = distanceInMeters / 1000;
+
+            // Calculate fare
+            const baseFare = 40;
+            const costPerKm = 15;
+            const estimatedFare = baseFare + costPerKm * distanceInKm;
+
+            setFare(estimatedFare);
+        } catch (error) {
+            console.error("Error calculating distance and fare:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchDistanceAndCalculateFare();
+    }, [selectedSource, selectedDestination]);
+
     // Handle form submission
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -83,9 +115,6 @@ export default function Book() {
             return;
         }
 
-        // Further usage of the selected suggestions
-        console.log("Selected Source:", selectedSource);
-        console.log("Selected Destination:", selectedDestination);
     };
 
     return (
@@ -140,7 +169,7 @@ export default function Book() {
                         )}
                     </div>
                     <div>
-                        <p>Estimated Fare: $10</p>
+                        <p>Estimated Fare: {fare ? `Rs.${fare.toFixed(2)}` : "N/A"}</p>
                         <button type="submit">Book</button>
                     </div>
                 </form>
