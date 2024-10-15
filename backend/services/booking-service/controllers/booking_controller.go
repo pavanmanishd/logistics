@@ -84,3 +84,13 @@ func GetBookings(c *gin.Context) {
 	}
 	c.JSON(400, gin.H{"error": "User ID is required"})
 }
+
+func GetBookingByID(c *gin.Context) {
+	id := c.Param("id")
+	booking, err := services.FindBookingByID(id)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, booking)
+}
