@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import ProtectedRoute from "@/validation/ProtectedRoute";
+import { useRouter } from "next/navigation";
 
 const bookingsAPIURL = "http://localhost:8081";
 
@@ -23,7 +24,8 @@ type Booking = {
 export default function AllBookings() {
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [userid, setUserid] = useState<string>("");
-
+    const router = useRouter();
+    
     useEffect(() => {
         const id = localStorage.getItem("id");
         if (id) {
@@ -43,6 +45,10 @@ export default function AllBookings() {
         }
     }, [userid]);
 
+    const handleClick = (id: string) => {
+        router.push(`/book/${id}`);
+    };
+
     return (
         <ProtectedRoute element={
             <div>
@@ -50,7 +56,7 @@ export default function AllBookings() {
                 {bookings.length > 0 ? (
                     <ul>
                         {bookings.map((booking) => (
-                            <li key={booking.id}>
+                            <li key={booking.id} onClick={() => handleClick(booking.id)}>
                                 <p>Booking ID: {booking.id}</p>
                                 <p>User ID: {booking.user_id}</p>
                                 <p>Driver ID: {booking.driver_id}</p>
