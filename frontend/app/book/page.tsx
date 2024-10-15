@@ -2,7 +2,7 @@
 import ProtectedRoute from "@/validation/ProtectedRoute";
 import axios from "axios";
 import { useEffect, useState, useCallback } from "react";
-
+import { useRouter } from "next/navigation";
 // Debounce function to limit API calls
 function debounce(func: Function, delay: number) {
     let timer: NodeJS.Timeout;
@@ -26,6 +26,7 @@ export default function Book() {
     const [selectedDestination, setSelectedDestination] = useState<any | null>(null);
     const [fare, setFare] = useState<number | null>(null);
     const [userId, setUserId] = useState<string | null>(null);
+    const router = useRouter();
 
     useEffect(() => {
         const userId = localStorage.getItem("id");
@@ -144,8 +145,8 @@ export default function Book() {
                 fare: fare,
             });
 
-            alert("Booking successful!");
             console.log("Booking successful:", response.data);
+            router.push("/book/all");
         } catch (error) {
             console.error("Error booking:", error);
             alert("Error booking!");

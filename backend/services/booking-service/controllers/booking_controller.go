@@ -71,3 +71,17 @@ func getDriversNearby(loc models.Point) {
 	// Close the response body
 	defer res.Body.Close()
 }
+
+func GetBookings(c *gin.Context) {
+	userID := c.Query("id")
+	if userID != "" {
+		bookings, err := services.GetBookingsByUserID(userID)
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(200, bookings)
+		return
+	}
+	c.JSON(400, gin.H{"error": "User ID is required"})
+}

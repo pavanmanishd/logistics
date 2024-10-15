@@ -47,3 +47,7 @@ func UpdateBookingStatus(id string, status string) error {
 func DeleteBooking(id string) error {
 	return bookingRepo.DeleteBooking(id)
 }
+
+func GetBookingsByUserID(userID string) ([]models.Booking, error) {
+	return bookingRepo.FindBookingByUserID(userID)
+}
