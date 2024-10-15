@@ -9,7 +9,7 @@ import (
 
 func SetupRoutes(router *gin.Engine) {
 	services.InitMQService()
-	go services.Consume()
+	go services.Consume("user.notification")
 
 	router.GET("/ws/notification", controllers.HandleConnections)
 }

@@ -40,6 +40,7 @@ func FindDrivers(c *gin.Context) {
 
 		jsonData := map[string]interface{}{
 			"client_id": driver.ID.Hex(),
+			"type": "ask",
 			"body" : map[string]string{
 				"driver_id": driver.ID.Hex(),
 				"user_id": body.UserID,
@@ -48,7 +49,7 @@ func FindDrivers(c *gin.Context) {
 			},
 		}
 		// Publishing the driver ID to a specific exchange and routing key
-		err = services.Publish("driver.found", jsonData)
+		err = services.Publish("user.notification", jsonData)
 		if err != nil {
 			log.Printf("Failed to publish driver %s: %s", driver.ID.Hex(), err.Error())
 		} else {

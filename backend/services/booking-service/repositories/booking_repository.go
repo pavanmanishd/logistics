@@ -28,7 +28,11 @@ func (repo *BookingRepository) CreateBooking(booking models.Booking) (string, er
 
 func (repo *BookingRepository) FindBookingByID(id string) (models.Booking, error) {
 	var booking models.Booking
-	err := repo.collection.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&booking)
+	bid,err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return booking, err
+	}
+	err = repo.collection.FindOne(context.TODO(), bson.M{"_id": bid}).Decode(&booking)
 	return booking, err
 }
 
@@ -61,5 +65,16 @@ func (repo *BookingRepository) UpdateBookingStatus(id string, status string) err
 
 func (repo *BookingRepository) DeleteBooking(id string) error {
 	_, err := repo.collection.DeleteOne(context.TODO(), bson.M{"_id": id})
+	return err
+}
+
+func (repo *BookingRepository) FindBookingByUserIDAndAddDriverID(userID string, driverID string) error {
+	_, err := repo.collection.UpdateOne(context.TODO(), bson.M{"user_id": userID, "driver_id": ""}, bson.M{"$set": bson.M{"driver_id": driverID}})
+	return err
+}
+
+func (repo *BookingRepository) UpdateDriverID(bookingID string, driverID string) error {
+	bookingIDObjectID, _ := primitive.ObjectIDFromHex(bookingID)
+	_, err := repo.collection.UpdateOne(context.TODO(), bson.M{"_id": bookingIDObjectID, "driver_id": ""}, bson.M{"$set": bson.M{"driver_id": driverID, "status": "accepted"}})
 	return err
 }

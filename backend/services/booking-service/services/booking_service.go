@@ -51,3 +51,7 @@ func DeleteBooking(id string) error {
 func GetBookingsByUserID(userID string) ([]models.Booking, error) {
 	return bookingRepo.FindBookingByUserID(userID)
 }
+
+func UpdateDriverID(bookingID string, driverID string) error {
+	return bookingRepo.UpdateDriverID(bookingID, driverID)
+}

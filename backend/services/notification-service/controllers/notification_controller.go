@@ -5,10 +5,10 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"notification-service/notifier"
+	"notification-service/services"
 	"encoding/json"
 )
-
-var clients = make(map[string]*websocket.Conn) // Map to store WebSocket connections
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
@@ -16,57 +16,49 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+// WebSocket handler to manage connections and handle incoming messages
 func HandleConnections(c *gin.Context) {
 	w := c.Writer
 	r := c.Request
-	
+
 	// Upgrade initial GET request to a WebSocket
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Fatal(err)
+		return
 	}
 	defer ws.Close()
 
-	// Extract client ID from query parameters (or generate one)
+	// Extract client ID from query parameters
 	clientID := r.URL.Query().Get("id")
 	if clientID == "" {
 		return
 	}
 
-	// Store the WebSocket connection using the client ID
-	clients[clientID] = ws
+	// Register WebSocket connection
+	notifier.RegisterClient(clientID, ws)
 	log.Printf("Client connected with ID: %s", clientID)
 
-	// Continuously read messages from the client (optional)
+	// Continuously read messages from the client
 	for {
 		_, msg, err := ws.ReadMessage()
 		if err != nil {
 			log.Printf("error: %v", err)
-			delete(clients, clientID) // Remove client on error
+			notifier.RemoveClient(clientID)
 			break
 		}
 
-		// Log received message (optional)
-		log.Printf("Received message from client %s: %s", clientID, string(msg))
-	}
-}
+		log.Printf("Received message from client %s: %s", clientID, string(msg)) // {driver_id,action,booking_id}
 
-func NotifyClient(clientID string, message map[string]interface{}) {
-	// Retrieve WebSocket connection using the client ID
-	ws, ok := clients[clientID]
-	if !ok {
-		log.Printf("Client with ID %s not found", clientID)
-		return
-	}
+		var msgJSON map[string]interface{}
+		if err := json.Unmarshal(msg, &msgJSON); err != nil {
+			log.Printf("Failed to unmarshal message: %s", err)
+			continue
+		}
 
-	messageBytes, err := json.Marshal(message)
-	if err != nil {
-		log.Printf("Failed to marshal message: %s", err)
-		return
-	}
-
-	// Write message to the WebSocket connection
-	if err := ws.WriteMessage(websocket.TextMessage, messageBytes); err != nil {
-		log.Printf("error: %v", err)
+		// Handle actions like "accept" or "reject"
+		if msgJSON["action"] == "driver.update.accept" {
+			services.Publish("driver.update", msgJSON)
+		}
 	}
 }

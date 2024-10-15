@@ -6,8 +6,6 @@ import (
 	"log"
 	"time"
 
-	"notification-service/notifier"
-
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -128,10 +126,43 @@ func (mq *MQService) ConsumeMessages(queueName string) error {
 				log.Printf("Failed to parse message: %s", err)
 			}
 
-			clientID := data["client_id"].(string)
+			// Process the message
+			log.Printf("Received message: %s", data)
+			
+			if (queueName == "driver.update") {
+				if data["action"] == "driver.update.accept" {
+					log.Printf("Driver %s accepted booking %s", data["driver_id"], data["booking_id"])
+					UpdateDriverID(data["booking_id"].(string), data["driver_id"].(string))
+					booking, err := FindBookingByID(data["booking_id"].(string))
+					if err != nil {
+						log.Printf("Failed to find booking: %s", err)
+					}
 
-			// Notify the client using the notifier package
-			notifier.NotifyClient(clientID, data["type"].(string), data["body"].(map[string]interface{}))
+					err = UpdateBookingStatus(data["booking_id"].(string), "accepted")
+					if err != nil {
+						log.Printf("Failed to update booking status: %s", err)
+					}
+
+					err = Publish("user.notification", map[string]interface{}{
+						"client_id": booking.UserID,
+						"type": "update",
+						"body": map[string]string{
+							"booking_id": data["booking_id"].(string),
+							"status":     "accepted",
+							"driver_id":  data["driver_id"].(string),
+							"user_id":    booking.UserID,
+						},
+					})
+					
+					if err != nil {
+						log.Printf("Failed to publish message: %s", err)
+					}
+				} else if data["action"] == "driver.update.reject" {
+					log.Printf("Driver %s rejected booking %s", data["driver_id"], data["booking_id"])
+				} else {
+					log.Printf("Unknown action: %s", data["action"])
+				}
+			}
 		}
 	}()
 
