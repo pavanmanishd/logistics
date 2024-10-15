@@ -45,6 +45,41 @@ export default function AllBookings() {
         }
     }, [userid]);
 
+    useEffect(() => {
+        if (!userid) {
+            return;
+        }
+
+        const socket = new WebSocket("ws://localhost:8080/ws/notification?id=" + userid);
+
+        socket.onopen = () => {
+            console.log("WebSocket connection established.");
+        };
+
+        socket.onerror = (error) => {
+            console.error("WebSocket error:", error);
+        };
+
+        socket.onmessage = (message) => {
+            console.log("WebSocket message:", message.data);
+            const msgJSON = JSON.parse(message.data);
+            if (msgJSON.type == "update") {
+                axios.get(`${bookingsAPIURL}/bookings?id=${userid}`)
+                    .then((response) => {
+                        setBookings(response.data);
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                    });
+            }
+        };
+
+        return () => {
+            socket.close();
+        };
+
+    }, [userid]);
+
     const handleClick = (id: string) => {
         router.push(`/book/${id}`);
     };
