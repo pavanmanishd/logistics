@@ -15,4 +15,5 @@ func SetupRoutes(router *gin.Engine) {
 	router.POST("/register/additional", controllers.RegisterAdditional)
 	router.POST("/login", controllers.Login)
 	router.GET("/ws/location", controllers.HandleLocationWSProxy)
+	router.GET("/ws/notification", controllers.HandleNotificationWSProxy)
 }

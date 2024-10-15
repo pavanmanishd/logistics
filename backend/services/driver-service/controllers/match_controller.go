@@ -8,13 +8,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type MatchRequest struct{
+	Location models.Point `json:"location"`
+	UserID string `json:"user_id"`
+	BookingID string `json:"booking_id"`
+}
+
 func FindDrivers(c *gin.Context) {
-	var location models.Point
-	if err := c.ShouldBindJSON(&location); err != nil {
+	var body MatchRequest
+	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-
+	var location models.Point = body.Location
+	
 	lan := location.Coordinates[0]
 	lon := location.Coordinates[1]
 
@@ -31,8 +38,17 @@ func FindDrivers(c *gin.Context) {
 	for _, driver := range drivers {
 		log.Printf("Found driver: %s", driver.ID.Hex())
 
+		jsonData := map[string]interface{}{
+			"client_id": driver.ID.Hex(),
+			"body" : map[string]string{
+				"driver_id": driver.ID.Hex(),
+				"user_id": body.UserID,
+				"booking_id": body.BookingID,
+				"type": "accept_ride",
+			},
+		}
 		// Publishing the driver ID to a specific exchange and routing key
-		err = services.Publish("driver.found", driver.ID.Hex())
+		err = services.Publish("driver.found", jsonData)
 		if err != nil {
 			log.Printf("Failed to publish driver %s: %s", driver.ID.Hex(), err.Error())
 		} else {

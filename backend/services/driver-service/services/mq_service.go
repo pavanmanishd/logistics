@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 	"time"
-
+	"encoding/json"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -42,7 +42,12 @@ func (mq *MQService) Connect() error {
 }
 
 // PublishMessage publishes a message to the specified queue
-func (mq *MQService) PublishMessage(queueName string, body string) error {
+func (mq *MQService) PublishMessage(queueName string, body map[string]interface{}) error {
+	bodyBytes, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+
 	// Declare a queue to send the message to
 	q, err := mq.ch.QueueDeclare(
 		queueName, // name of the queue
@@ -66,8 +71,8 @@ func (mq *MQService) PublishMessage(queueName string, body string) error {
 		false,  // mandatory
 		false,  // immediate
 		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        []byte(body),
+			ContentType: "application/json",
+			Body: bodyBytes,
 		})
 	if err != nil {
 		return err
@@ -93,6 +98,6 @@ func InitMQService() {
 	failOnError(mqService.Connect(), "Failed to connect to RabbitMQ")
 }
 
-func Publish(queueName, body string) error {
+func Publish(queueName string, body map[string]interface{}) error {
 	return mqService.PublishMessage(queueName, body)
 }

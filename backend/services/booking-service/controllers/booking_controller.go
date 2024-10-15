@@ -32,14 +32,14 @@ func Book(c *gin.Context) {
 	booking.Destination.Coordinates[0] = bookingRequest.Destination.Longitude
 	booking.Destination.Coordinates[1] = bookingRequest.Destination.Latitude
 
-	err := services.CreateBooking(booking)
+	id, err := services.CreateBooking(booking)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
 	// Get drivers nearby
-	getDriversNearby(booking.Source)
+	getDriversNearby(booking.Source, booking.UserID, id)
 
 	c.JSON(201, gin.H{"message": "Booking created successfully"})
 }
@@ -48,13 +48,12 @@ func Health(c *gin.Context) {
 	c.JSON(200, gin.H{"message": "Booking service is healthy"})
 }
 
-func getDriversNearby(loc models.Point) {
+func getDriversNearby(loc models.Point, userID, bookingID string) {
 	driverServiceURL := "http://localhost:8082"
 	// Get drivers nearby
 	httpClient := &http.Client{}
 
-	// send a json as a body with same structure as models.Point
-	body := `{"type": "Point", "coordinates": [` + strconv.FormatFloat(loc.Coordinates[0], 'f', -1, 64) + `, ` + strconv.FormatFloat(loc.Coordinates[1], 'f', -1, 64) + `]}`
+	body := `{"location": {"type": "Point", "coordinates": [` + strconv.FormatFloat(loc.Coordinates[0], 'f', -1, 64) + `, ` + strconv.FormatFloat(loc.Coordinates[1], 'f', -1, 64) + `]}, "user_id": "` + userID + `", "booking_id": "` + bookingID + `"}`
 	req, err := http.NewRequest("POST", driverServiceURL+"/nearby", strings.NewReader(body))
 	if err != nil {
 		panic(err)

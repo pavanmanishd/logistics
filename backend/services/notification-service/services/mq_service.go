@@ -2,8 +2,10 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"time"
+	"notification-service/controllers"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -113,7 +115,17 @@ func (mq *MQService) ConsumeMessages(queueName string) error {
 	go func() {
 		for d := range msgs {
 			log.Printf("Received a message: %s", d.Body)
-			// You can process the message here, e.g., parsing JSON or further business logic
+			// json parse
+			var data map[string]interface{}
+			err := json.Unmarshal(d.Body, &data)
+			if err != nil {
+				log.Printf("Failed to parse message: %s", err)
+			}
+
+			client_id := data["client_id"].(string)
+
+			// Notify the client
+			controllers.NotifyClient(client_id, data["body"].(map[string]interface{}))
 		}
 	}()
 

@@ -82,12 +82,44 @@ const LocationTracker: React.FC = () => {
         }
     };
 
+
+    const [notificationWs, setNotificationWs] = useState<WebSocket | null>(null);
+    const [notification, setNotification] = useState(null);
+ 
+    useEffect(() => {
+        if (!driverId) {
+            return;
+        }
+        // Open WebSocket connection
+        const socket = new WebSocket(`ws://localhost:8080/ws/notification?id=${driverId}`);
+
+        socket.onopen = () => {
+            console.log("WebSocket connection established.");
+            setNotificationWs(socket); // Set WebSocket only after the connection is established
+        };
+
+        socket.onmessage = (event) => {
+            console.log("WebSocket message received:", event.data);
+            setNotification(event.data);
+        };
+
+        socket.onerror = (error) => {
+            console.error("WebSocket error:", error);
+        };
+
+        // Clean up WebSocket connection on component unmount
+        return () => {
+            socket.close();
+        };
+    }, [driverId]);
+
     return (
         <ProtectedRoute element={
             <div>
                 <h3>Location Tracker</h3>
                 <p>Latitude: {location.latitude}</p>
                 <p>Longitude: {location.longitude}</p>
+                {notification && <p>Notification: {notification}</p>}
             </div>
         } />
     );

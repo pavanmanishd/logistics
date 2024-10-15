@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -16,9 +17,13 @@ func NewBookingRepository(collection *mongo.Collection) *BookingRepository {
 	return &BookingRepository{collection: collection}
 }
 
-func (repo *BookingRepository) CreateBooking(booking models.Booking) error {
-	_, err := repo.collection.InsertOne(context.TODO(), booking)
-	return err
+func (repo *BookingRepository) CreateBooking(booking models.Booking) (string, error) {
+	res, err := repo.collection.InsertOne(context.TODO(), booking)
+	if err != nil {
+		return "", err
+	}
+	id := res.InsertedID.(primitive.ObjectID).Hex()
+	return id, nil
 }
 
 func (repo *BookingRepository) FindBookingByID(id string) (models.Booking, error) {

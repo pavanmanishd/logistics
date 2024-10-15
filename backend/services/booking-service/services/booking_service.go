@@ -24,7 +24,7 @@ func InitService() {
 	bookingRepo = repositories.NewBookingRepository(client.Database("logistics").Collection("bookings"))
 }
 
-func CreateBooking(booking models.Booking) error {
+func CreateBooking(booking models.Booking) (string, error) {
 	return bookingRepo.CreateBooking(booking)
 }
 
