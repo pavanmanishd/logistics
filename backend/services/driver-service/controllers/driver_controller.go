@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	"driver-service/services"
 	"driver-service/models"
+	"driver-service/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,3 +32,18 @@ func Health(c *gin.Context) {
 	c.JSON(200, gin.H{"message": "Driver service is healthy"})
 }
 
+func DriverLocation(c *gin.Context) {
+	driver_id := c.Query("id")
+	if driver_id == "" {
+		c.JSON(400, gin.H{"error": "Driver ID is required"})
+		return
+	}
+	
+	driver, err := services.GetDriverLocation(driver_id)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, driver)
+}

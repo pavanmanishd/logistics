@@ -9,6 +9,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
 )
 
 var driverRepo *repositories.DriverRepository
@@ -33,4 +34,13 @@ func UpdateLocation(driverID string, longitude, latitude float64) error {
 
 func FindDriversInRadius(longitude, latitude, radius float64) ([]models.Driver, error) {
 	return driverRepo.FindDriversInRadius(longitude, latitude, radius)
+}
+
+func GetDriverLocation(driverID string) (models.Point, error) {
+	driver, err := driverRepo.FindDriverByID(driverID)
+	if err != nil {
+		return models.Point{}, err
+	}
+
+	return driver.Location, nil
 }

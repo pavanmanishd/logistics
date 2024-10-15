@@ -75,7 +75,23 @@ export default function BookingDetails() {
         }
     }, [booking]);
 
-    const carloc = [78.59726, 17.19615];
+    const [carloc, setCarloc] = useState<[number, number]>([0, 0]);
+    useEffect(() => {
+        if (!booking) return;
+        const fetchLocation = () => {
+            axios.get(`http://localhost:8082/driver?id=${booking.driver_id}`)
+                .then((response) => {
+                    setCarloc(response.data.coordinates);
+                })
+                .catch((error) => {
+                    console.error(error);
+                });
+        };
+
+        fetchLocation();
+        const interval = setInterval(fetchLocation, 4000);
+        return () => clearInterval(interval);
+    }, [booking]);
 
     return (
         <ProtectedRoute element={

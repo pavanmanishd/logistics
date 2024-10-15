@@ -31,7 +31,11 @@ func (repo *DriverRepository) FindDriverByVehicleNo(vehicleNo string) (models.Dr
 
 func (repo *DriverRepository) FindDriverByID(id string) (models.Driver, error) {
 	var driver models.Driver
-	err := repo.collection.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&driver)
+	did, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return driver, err
+	}
+	err = repo.collection.FindOne(context.TODO(), bson.M{"_id": did}).Decode(&driver)
 	return driver, err
 }
 
