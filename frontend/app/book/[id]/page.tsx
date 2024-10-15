@@ -18,6 +18,7 @@ import L from "leaflet";
 import "leaflet/dist/images/marker-icon.png";
 import "leaflet/dist/images/marker-shadow.png";
 
+
 // Fix default marker icon issues
 const DefaultIcon = L.icon({
     iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
@@ -25,6 +26,13 @@ const DefaultIcon = L.icon({
     iconAnchor: [12, 41], // Adjust to make it appear at the correct position
 });
 
+const CarIcon = L.icon({
+    iconUrl: "/car.png", // Replace with your custom destination marker icon URL
+    shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
+    iconSize: [32, 41], // Adjust size of the icon
+    iconAnchor: [16, 41], // Anchor point of the icon (centered at bottom)
+    popupAnchor: [0, -41], // Popup anchor if needed
+});
 // Set the default icon for all markers
 L.Marker.prototype.options.icon = DefaultIcon;
 
@@ -67,6 +75,8 @@ export default function BookingDetails() {
         }
     }, [booking]);
 
+    const carloc = [78.59726, 17.19615];
+
     return (
         <ProtectedRoute element={
             <div>
@@ -101,6 +111,12 @@ export default function BookingDetails() {
                         <Marker position={[booking.destination.coordinates[1], booking.destination.coordinates[0]]}>
                             <Tooltip permanent>
                                 Destination Location: {booking.destination.coordinates[0]}, {booking.destination.coordinates[1]}
+                            </Tooltip>
+                        </Marker>
+                        {/* Car Marker */}
+                        <Marker position={[carloc[1],carloc[0]]} icon={CarIcon}>
+                            <Tooltip permanent>
+                                Car Location: {carloc[0]}, {carloc[1]}
                             </Tooltip>
                         </Marker>
                     </MapContainer>
