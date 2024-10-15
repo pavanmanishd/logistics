@@ -3,6 +3,30 @@ import ProtectedRoute from "@/validation/ProtectedRoute";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import dynamic from 'next/dynamic'; // Import dynamic for client-side import
+
+// Dynamically import the MapContainer, Marker, Popup, and TileLayer from 'react-leaflet' only on the client side
+const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { ssr: false });
+const Marker = dynamic(() => import('react-leaflet').then(mod => mod.Marker), { ssr: false });
+const Popup = dynamic(() => import('react-leaflet').then(mod => mod.Popup), { ssr: false });
+const TileLayer = dynamic(() => import('react-leaflet').then(mod => mod.TileLayer), { ssr: false });
+
+import 'leaflet/dist/leaflet.css'; // Import Leaflet's CSS
+
+// Import Leaflet's default marker icon assets
+import L from "leaflet";
+import "leaflet/dist/images/marker-icon.png";
+import "leaflet/dist/images/marker-shadow.png";
+
+// Fix default marker icon issues
+const DefaultIcon = L.icon({
+    iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
+    shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
+    iconAnchor: [12, 41], // Adjust to make it appear at the correct position
+});
+
+// Set the default icon for all markers
+L.Marker.prototype.options.icon = DefaultIcon;
 
 type Location = {
     type: string;
@@ -20,6 +44,7 @@ type Booking = {
 };
 
 const bookingsAPIURL = "http://localhost:8081";
+
 export default function BookingDetails() {
     const params = useParams();
     const bookingId = params.id;
@@ -35,6 +60,12 @@ export default function BookingDetails() {
             });
     }, [bookingId]);
 
+    const [position, setPosition] = useState<[number, number]>([0, 0]);
+    useEffect(() => {
+        if (booking) {
+            setPosition([booking.source.coordinates[1], booking.source.coordinates[0]]);
+        }
+    }, [booking]);
 
     return (
         <ProtectedRoute element={
@@ -47,6 +78,31 @@ export default function BookingDetails() {
                 <p>Source: {booking?.source.coordinates[0]}, {booking?.source.coordinates[1]}</p>
                 <p>Destination: {booking?.destination.coordinates[0]}, {booking?.destination.coordinates[1]}</p>
                 <p>Fare: {booking?.fare}</p>
+
+                {/* Conditionally render the Map only if booking data is available */}
+                {booking &&
+                    <MapContainer
+                        center={position}
+                        zoom={13}
+                        scrollWheelZoom={false}
+                        style={{ height: '400px', width: '100%' }}
+                    >
+                        <TileLayer
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
+                        <Marker position={[booking.source.coordinates[1], booking.source.coordinates[0]]}>
+                            <Popup>
+                                Source Location: {booking.source.coordinates[0]}, {booking.source.coordinates[1]}
+                            </Popup>
+                        </Marker>
+                        <Marker position={[booking.destination.coordinates[1], booking.destination.coordinates[0]]}>
+                            <Popup>
+                                Destination Location: {booking.destination.coordinates[0]}, {booking.destination.coordinates[1]}
+                            </Popup>
+                        </Marker>
+                    </MapContainer>
+                }
             </div>
         }/>
     );
