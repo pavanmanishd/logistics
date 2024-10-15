@@ -5,11 +5,11 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import dynamic from 'next/dynamic'; // Import dynamic for client-side import
 
-// Dynamically import the MapContainer, Marker, Popup, and TileLayer from 'react-leaflet' only on the client side
+// Dynamically import the MapContainer, Marker, TileLayer, and Tooltip from 'react-leaflet' only on the client side
 const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { ssr: false });
 const Marker = dynamic(() => import('react-leaflet').then(mod => mod.Marker), { ssr: false });
-const Popup = dynamic(() => import('react-leaflet').then(mod => mod.Popup), { ssr: false });
 const TileLayer = dynamic(() => import('react-leaflet').then(mod => mod.TileLayer), { ssr: false });
+const Tooltip = dynamic(() => import('react-leaflet').then(mod => mod.Tooltip), { ssr: false });
 
 import 'leaflet/dist/leaflet.css'; // Import Leaflet's CSS
 
@@ -91,15 +91,17 @@ export default function BookingDetails() {
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         />
+                        {/* Source Marker */}
                         <Marker position={[booking.source.coordinates[1], booking.source.coordinates[0]]}>
-                            <Popup>
+                            <Tooltip permanent>
                                 Source Location: {booking.source.coordinates[0]}, {booking.source.coordinates[1]}
-                            </Popup>
+                            </Tooltip>
                         </Marker>
+                        {/* Destination Marker */}
                         <Marker position={[booking.destination.coordinates[1], booking.destination.coordinates[0]]}>
-                            <Popup>
+                            <Tooltip permanent>
                                 Destination Location: {booking.destination.coordinates[0]}, {booking.destination.coordinates[1]}
-                            </Popup>
+                            </Tooltip>
                         </Marker>
                     </MapContainer>
                 }
