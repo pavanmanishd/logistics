@@ -130,7 +130,7 @@ func (mq *MQService) ConsumeMessages(queueName string) error {
 			log.Printf("Received message: %s", data)
 			
 			if (queueName == "driver.update") {
-				if data["action"] == "driver.update.accept" {
+				if data["action"] == "driver.update" {
 					log.Printf("Driver %s accepted booking %s", data["driver_id"], data["booking_id"])
 					UpdateDriverID(data["booking_id"].(string), data["driver_id"].(string))
 					booking, err := FindBookingByID(data["booking_id"].(string))
@@ -138,7 +138,8 @@ func (mq *MQService) ConsumeMessages(queueName string) error {
 						log.Printf("Failed to find booking: %s", err)
 					}
 
-					err = UpdateBookingStatus(data["booking_id"].(string), "accepted")
+					log.Printf("Booking: %v", booking)
+					err = UpdateBookingStatus(data["booking_id"].(string), data["status"].(string))
 					if err != nil {
 						log.Printf("Failed to update booking status: %s", err)
 					}
@@ -148,7 +149,7 @@ func (mq *MQService) ConsumeMessages(queueName string) error {
 						"type": "update",
 						"body": map[string]string{
 							"booking_id": data["booking_id"].(string),
-							"status":     "accepted",
+							"status":     data["status"].(string),
 							"driver_id":  data["driver_id"].(string),
 							"user_id":    booking.UserID,
 						},
@@ -157,8 +158,6 @@ func (mq *MQService) ConsumeMessages(queueName string) error {
 					if err != nil {
 						log.Printf("Failed to publish message: %s", err)
 					}
-				} else if data["action"] == "driver.update.reject" {
-					log.Printf("Driver %s rejected booking %s", data["driver_id"], data["booking_id"])
 				} else {
 					log.Printf("Unknown action: %s", data["action"])
 				}

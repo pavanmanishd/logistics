@@ -56,8 +56,8 @@ func HandleConnections(c *gin.Context) {
 			continue
 		}
 
-		// Handle actions like "accept" or "reject"
-		if msgJSON["action"] == "driver.update.accept" {
+		if msgJSON["action"] == "driver.update" {
+			log.Printf("action: driver.update publishing")
 			services.Publish("driver.update", msgJSON)
 		}
 	}

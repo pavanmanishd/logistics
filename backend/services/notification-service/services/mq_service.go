@@ -127,10 +127,12 @@ func (mq *MQService) ConsumeMessages(queueName string) error {
 			if err != nil {
 				log.Printf("Failed to parse message: %s", err)
 			}
+			log.Printf("Received message: %v", data)
 
 			clientID := data["client_id"].(string)
 
 			// Notify the client using the notifier package
+			log.Printf("Notifying client %s %s %s", clientID, data["type"].(string), data["body"].(map[string]interface{}))
 			notifier.NotifyClient(clientID, data["type"].(string), data["body"].(map[string]interface{}))
 		}
 	}()

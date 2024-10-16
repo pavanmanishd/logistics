@@ -142,7 +142,7 @@ const LocationTracker: React.FC = () => {
 
         // Send acceptance for the accepted notification along with booking_id and driver_id
         if (notificationWs && driverId) {
-            notificationWs.send(JSON.stringify({ driver_id, action: "driver.update.accept", notification_id: id, booking_id, user_id }));
+            notificationWs.send(JSON.stringify({ driver_id, action: "driver.update",  status: "Driver Accepted - Enroute to Source", booking_id, user_id }));
         }
 
         // Reject all other notifications
@@ -161,7 +161,7 @@ const LocationTracker: React.FC = () => {
 
         // Send rejection to the server with booking_id and driver_id
         if (notificationWs && driverId) {
-            notificationWs.send(JSON.stringify({ driver_id, action: "driver.update.reject", notification_id: id, booking_id, user_id }));
+            notificationWs.send(JSON.stringify({ driver_id, action: "driver.update.reject", status: "Rejected", booking_id, user_id }));
         }
 
         // Remove the rejected notification from the queue

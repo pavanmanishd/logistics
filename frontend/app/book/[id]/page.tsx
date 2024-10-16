@@ -1,9 +1,9 @@
 "use client";
-import ProtectedRoute from "@/validation/ProtectedRoute";
-import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import dynamic from 'next/dynamic'; // Import dynamic for client-side import
+import ProtectedRoute from "@/validation/ProtectedRoute";
+import { useParams } from "next/navigation";
 
 // Dynamically import the MapContainer, Marker, TileLayer, and Tooltip from 'react-leaflet' only on the client side
 const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { ssr: false });
@@ -17,7 +17,6 @@ import 'leaflet/dist/leaflet.css'; // Import Leaflet's CSS
 import L from "leaflet";
 import "leaflet/dist/images/marker-icon.png";
 import "leaflet/dist/images/marker-shadow.png";
-
 
 // Fix default marker icon issues
 const DefaultIcon = L.icon({
@@ -33,49 +32,61 @@ const CarIcon = L.icon({
     iconAnchor: [16, 41], // Anchor point of the icon (centered at bottom)
     popupAnchor: [0, -41], // Popup anchor if needed
 });
-// Set the default icon for all markers
 L.Marker.prototype.options.icon = DefaultIcon;
 
-type Location = {
-    type: string;
-    coordinates: [number, number]; // [longitude, latitude]
-};
+const currentStatuses = [
+    "Booking Placed - Waiting for Driver",
+    "Driver Accepted - Enroute to Source",
+    "Driver Arrived - Picked Up",
+    "Enroute to Destination",
+    "Dropped at Destination",
+    "Booking Completed",
+];
 
-type Booking = {
-    _id: string;
+const bookingsAPIURL = "http://localhost:8081";
+
+interface Booking {
+    id: string;
     user_id: string;
     driver_id: string;
     status: string;
-    source: Location;
-    destination: Location;
+    source: {
+        type: string;
+        coordinates: [number, number];
+    };
+    destination: {
+        type: string;
+        coordinates: [number, number];
+    };
     fare: number;
-};
-
-const bookingsAPIURL = "http://localhost:8081";
+}
 
 export default function BookingDetails() {
     const params = useParams();
     const bookingId = params.id;
     const [booking, setBooking] = useState<Booking | null>(null);
-
+    const [currentStatusIndex, setCurrentStatusIndex] = useState<number>(0); // Track the current status
+    const [position, setPosition] = useState<[number, number]>([0, 0]);
+    const [carloc, setCarloc] = useState<[number, number]>([0, 0]);
+    const [userRole, setUserRole] = useState<string | null>(null);
+    
     useEffect(() => {
         axios.get(`${bookingsAPIURL}/booking/${bookingId}`)
             .then((response) => {
                 setBooking(response.data);
+                setCurrentStatusIndex(currentStatuses.indexOf(response.data.status));
             })
             .catch((error) => {
                 console.error(error);
             });
     }, [bookingId]);
 
-    const [position, setPosition] = useState<[number, number]>([0, 0]);
     useEffect(() => {
         if (booking) {
             setPosition([booking.source.coordinates[1], booking.source.coordinates[0]]);
         }
     }, [booking]);
 
-    const [carloc, setCarloc] = useState<[number, number]>([0, 0]);
     useEffect(() => {
         if (!booking) return;
         const fetchLocation = () => {
@@ -93,6 +104,75 @@ export default function BookingDetails() {
         return () => clearInterval(interval);
     }, [booking]);
 
+    useEffect(() => {
+        const userRole = localStorage.getItem("role");
+        if (userRole) {
+            setUserRole(userRole);
+        }
+    }, []);
+
+    const [notificationWs, setNotificationWs] = useState<WebSocket | null>(null);
+    const [userId, setUserId] = useState<string | null>(null);
+
+    useEffect(() => {
+        const userId = localStorage.getItem("id");
+        if (userId) {
+            setUserId(userId);
+        }
+    }, []);
+
+
+    useEffect(() => {
+        if (!userId) {
+            console.log("User ID not available.", userId);
+            return;
+        }
+
+        const socket = new WebSocket(`ws://localhost:8080/ws/notification?id=${userId}`);
+
+        socket.onopen = () => {
+            console.log("Notification WebSocket connection established.");
+            setNotificationWs(socket);
+        };
+
+        socket.onmessage = (event) => {
+            console.log("WebSocket notification received:", event.data);
+
+            const jsonData = JSON.parse(event.data);
+            console.log(jsonData);
+            if(jsonData.type == "update") {
+                axios.get(`${bookingsAPIURL}/booking/${bookingId}`)
+                    .then((response) => {
+                        setBooking(response.data);
+                        setCurrentStatusIndex(currentStatuses.indexOf(response.data.status));
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                    });
+            }
+        };
+
+        socket.onerror = (error) => {
+            console.error("Notification WebSocket error:", error);
+        };
+
+        return () => {
+            socket.close();
+        };
+    }, [userId, bookingId]);
+    
+
+    const nextStatus = () => {
+        if (currentStatusIndex < currentStatuses.length - 1) {
+            setCurrentStatusIndex(currentStatusIndex + 1);
+            if (notificationWs && booking) {
+                const jsonData = JSON.stringify({ driver_id: booking.driver_id, booking_id: booking.id, status: currentStatuses[currentStatusIndex + 1], user_id: booking.user_id,action: "driver.update" });
+                notificationWs.send(jsonData);
+            }       
+        }
+    };
+    
+
     return (
         <ProtectedRoute element={
             <div>
@@ -100,7 +180,7 @@ export default function BookingDetails() {
                 <p>Booking ID: {bookingId}</p>
                 <p>User ID: {booking?.user_id}</p>
                 <p>Driver ID: {booking?.driver_id}</p>
-                <p>Status: {booking?.status}</p>
+                <p>Status: {currentStatuses[currentStatusIndex]}</p>
                 <p>Source: {booking?.source.coordinates[0]}, {booking?.source.coordinates[1]}</p>
                 <p>Destination: {booking?.destination.coordinates[0]}, {booking?.destination.coordinates[1]}</p>
                 <p>Fare: {booking?.fare}</p>
@@ -130,13 +210,22 @@ export default function BookingDetails() {
                             </Tooltip>
                         </Marker>
                         {/* Car Marker */}
-                        <Marker position={[carloc[1],carloc[0]]} icon={CarIcon}>
+                        <Marker position={[carloc[1], carloc[0]]} icon={CarIcon}>
                             <Tooltip permanent>
                                 Car Location: {carloc[0]}, {carloc[1]}
                             </Tooltip>
                         </Marker>
                     </MapContainer>
                 }
+
+                {/* Display button only for drivers */}
+                {userRole === "driver" && (
+                    <div>
+                        <h2>Change Status</h2>
+                        <p>Current Status: {currentStatuses[currentStatusIndex]}</p>
+                        <button onClick={nextStatus}>Next Status</button>
+                    </div>
+                )}
             </div>
         }/>
     );

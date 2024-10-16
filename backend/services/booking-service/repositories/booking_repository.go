@@ -59,7 +59,11 @@ func (repo *BookingRepository) FindBookingByDriverID(driverID string) ([]models.
 }
 
 func (repo *BookingRepository) UpdateBookingStatus(id string, status string) error {
-	_, err := repo.collection.UpdateOne(context.TODO(), bson.M{"_id": id}, bson.M{"$set": bson.M{"status": status}})
+	bid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+	_, err = repo.collection.UpdateOne(context.TODO(), bson.M{"_id": bid}, bson.M{"$set": bson.M{"status": status}})
 	return err
 }
 
@@ -75,6 +79,6 @@ func (repo *BookingRepository) FindBookingByUserIDAndAddDriverID(userID string, 
 
 func (repo *BookingRepository) UpdateDriverID(bookingID string, driverID string) error {
 	bookingIDObjectID, _ := primitive.ObjectIDFromHex(bookingID)
-	_, err := repo.collection.UpdateOne(context.TODO(), bson.M{"_id": bookingIDObjectID, "driver_id": ""}, bson.M{"$set": bson.M{"driver_id": driverID, "status": "accepted"}})
+	_, err := repo.collection.UpdateOne(context.TODO(), bson.M{"_id": bookingIDObjectID, "driver_id": ""}, bson.M{"$set": bson.M{"driver_id": driverID}})
 	return err
 }

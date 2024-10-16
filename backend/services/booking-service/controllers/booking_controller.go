@@ -21,7 +21,7 @@ func Book(c *gin.Context) {
 	var booking models.Booking
 	booking.UserID = bookingRequest.UserID
 	booking.Fare = bookingRequest.Fare
-	booking.Status = "Searching for driver"
+	booking.Status = "Booking Placed - Waiting for Driver"
 	booking.DriverID = ""
 
 	booking.Source.Type = "Point"
