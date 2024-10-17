@@ -82,3 +82,9 @@ func (repo *BookingRepository) UpdateDriverID(bookingID string, driverID string)
 	_, err := repo.collection.UpdateOne(context.TODO(), bson.M{"_id": bookingIDObjectID, "driver_id": ""}, bson.M{"$set": bson.M{"driver_id": driverID}})
 	return err
 }
+
+func (repo *BookingRepository) GetCurrentBookingByDriverID(driverID string) (models.Booking, error) {
+	var booking models.Booking
+	err := repo.collection.FindOne(context.TODO(), bson.M{"driver_id": driverID, "status": bson.M{"$ne": "Booking Completed"}}).Decode(&booking)
+	return booking, err
+}

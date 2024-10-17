@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import axios from "axios";
 import dynamic from 'next/dynamic'; // Import dynamic for client-side import
 import ProtectedRoute from "@/validation/ProtectedRoute";
@@ -61,6 +61,11 @@ interface Booking {
     fare: number;
 }
 
+interface Location {
+    latitude: number;
+    longitude: number;
+}
+
 export default function BookingDetails() {
     const params = useParams();
     const bookingId = params.id;
@@ -91,14 +96,14 @@ export default function BookingDetails() {
         if (!booking) return;
         const fetchLocation = () => {
             axios.get(`http://localhost:8082/driver?id=${booking.driver_id}`)
-                .then((response) => {
-                    setCarloc(response.data.coordinates);
-                })
-                .catch((error) => {
-                    console.error(error);
-                });
+            .then((response) => {
+                setCarloc(response.data.coordinates);
+            })
+            .catch((error) => {
+                console.error(error);
+            });
         };
-
+        
         fetchLocation();
         const interval = setInterval(fetchLocation, 4000);
         return () => clearInterval(interval);
@@ -171,6 +176,89 @@ export default function BookingDetails() {
             }       
         }
     };
+
+    const [ws, setWs] = useState<WebSocket | null>(null);
+    const [location, setLocation] = useState<Location>({ latitude: 0, longitude: 0 });
+    const [driverId, setDriverId] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!userRole) {
+            return;
+        }
+        if (userRole == "driver") {
+            const driverId = localStorage.getItem("id");
+            if (driverId) {
+                setDriverId(driverId);
+            }
+        }
+    }, [userRole]);
+
+    useEffect(() => {
+        if (!userRole || userRole != "driver") {
+            return;
+        }
+        // Open WebSocket connection for location tracking
+        const socket = new WebSocket("ws://localhost:8080/ws/location");
+
+        socket.onopen = () => {
+            console.log("WebSocket connection established.");
+            setWs(socket); // Set WebSocket only after the connection is established
+        };
+
+        socket.onerror = (error) => {
+            console.error("WebSocket error:", error);
+        };
+
+        return () => {
+            socket.close();
+        };
+    }, [userRole]);
+
+
+    useEffect(() => {
+        if (!userRole || userRole != "driver") {
+            return;
+        }
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            const interval = setInterval(() => {
+                sendLocation();
+            }, 5000);
+
+            return () => {
+                clearInterval(interval);
+            };
+        }
+    }, [ws, ws?.readyState, location, userRole]);
+
+    const sendLocation = () => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((position) => {
+                const { latitude, longitude } = position.coords;
+                setLocation({ latitude, longitude });
+
+                const jsonData = JSON.stringify({
+                    latitude: latitude,
+                    longitude: longitude,
+                    driver_id: driverId,
+                });
+
+                console.log("Sending location:", jsonData);
+
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    if (!driverId) {
+                        console.error("Driver ID is not set.");
+                        return;
+                    }
+                    ws.send(jsonData);
+                } else {
+                    console.error("WebSocket connection is not open.");
+                }
+            });
+        } else {
+            console.error("Geolocation is not supported by this browser.");
+        }
+    };
+
     
 
     return (
@@ -212,7 +300,11 @@ export default function BookingDetails() {
                         {/* Car Marker */}
                         <Marker position={[carloc[1], carloc[0]]} icon={CarIcon}>
                             <Tooltip permanent>
-                                Car Location: {carloc[0]}, {carloc[1]}
+                                {(!userRole || userRole != "driver") ? (
+                                        `Car Location: ${carloc[0]}, ${carloc[1]}`
+                                ) : (
+                                    "Your Location"
+                                )}
                             </Tooltip>
                         </Marker>
                     </MapContainer>

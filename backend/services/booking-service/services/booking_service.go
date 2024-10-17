@@ -59,3 +59,7 @@ func UpdateDriverID(bookingID string, driverID string) error {
 func GetBookingsByDriverID(driverID string) ([]models.Booking, error) {
 	return bookingRepo.FindBookingByDriverID(driverID)
 }
+
+func GetCurrentBookingByDriverID(driverID string) (models.Booking, error) {
+	return bookingRepo.GetCurrentBookingByDriverID(driverID)
+}

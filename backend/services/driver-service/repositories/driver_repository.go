@@ -69,7 +69,14 @@ func (repo *DriverRepository) FindDriversInRadius(longitude, latitude, radius fl
 	log.Printf("Found %d drivers in radius", cursor.RemainingBatchLength())
 	var drivers []models.Driver
 	err = cursor.All(context.Background(), &drivers)
-	return drivers, err
+
+	availableDrivers := make([]models.Driver, 0)
+	for _, driver := range drivers {
+		if driver.Avaliable {
+			availableDrivers = append(availableDrivers, driver)
+		}
+	}
+	return availableDrivers, err
 }
 
 func (repo *DriverRepository) CreateIndex() {

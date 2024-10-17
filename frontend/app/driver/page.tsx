@@ -1,5 +1,6 @@
 "use client";
 import ProtectedRoute from '@/validation/ProtectedRoute';
+import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 
 interface Location {
@@ -16,8 +17,24 @@ interface Notification {
     timer: NodeJS.Timeout; // Reference to the timer for auto-rejection
 }
 
-const timerForNotification = 5000; // 5 seconds for each notification
+type LocationType = {
+    type: string;
+    coordinates: [number, number]; // [longitude, latitude]
+  };
 
+type Booking = {
+    id: string;
+    user_id: string;
+    driver_id: string;
+    status: string;
+    source: LocationType;
+    destination: LocationType;
+    fare: number;
+};
+  
+
+const timerForNotification = 5000; // 5 seconds for each notification
+const bookingsAPIURL = "http://localhost:8081";
 const LocationTracker: React.FC = () => {
     const [ws, setWs] = useState<WebSocket | null>(null);
     const [location, setLocation] = useState<Location>({ latitude: 0, longitude: 0 });
@@ -53,15 +70,21 @@ const LocationTracker: React.FC = () => {
 
     useEffect(() => {
         if (ws && ws.readyState === WebSocket.OPEN) {
+            // Send location immediately when the WebSocket connection is open
+            // sendLocation();
+    
+            // Start the 5-second interval to send the location repeatedly
             const interval = setInterval(() => {
                 sendLocation();
             }, 5000);
-
+    
+            // Clean up the interval when the component unmounts or the WebSocket closes
             return () => {
                 clearInterval(interval);
             };
         }
     }, [ws, ws?.readyState, location]);
+    
 
     const sendLocation = () => {
         if (navigator.geolocation) {
@@ -170,6 +193,41 @@ const LocationTracker: React.FC = () => {
         );
     };
 
+    const goToCurrentBooking = () => {
+        if (!driverId) {
+            console.error("Driver ID is not available.");
+            return;
+        }
+        axios.get(`${bookingsAPIURL}/booking/current/driver/${driverId}`)
+            .then((response) => {
+                const booking = response.data;
+                if (booking && booking.id) {
+                    window.location.href = `/book/${booking.id}`;
+                } else {
+                    console.log("No current booking available.");
+                }
+            })
+            .catch((error) => {
+                console.error(error);
+            });
+    };
+
+
+    const [bookings, setBookings] = useState<Booking[]>([]);
+
+  useEffect(() => {
+    if (driverId) {
+      axios
+        .get(`${bookingsAPIURL}/bookings?id=${driverId}&type=driver`)
+        .then((response) => {
+          setBookings(response.data);
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    }
+  }, [driverId]);
+
     return (
         <ProtectedRoute element={
             <div>
@@ -177,7 +235,7 @@ const LocationTracker: React.FC = () => {
                 <p>Latitude: {location.latitude}</p>
                 <p>Longitude: {location.longitude}</p>
 
-                {/* Display all notifications */}
+                <h3>Notifications</h3>
                 {notifications.length > 0 && notifications.map((notification) => (
                     <div key={notification.id}>
                         <p>Notification: {notification.message}</p>
@@ -185,7 +243,24 @@ const LocationTracker: React.FC = () => {
                         <button onClick={() => rejectNotification(notification.id, notification.booking_id, notification.driver_id, notification.user_id)}>Reject</button>
                     </div>
                 ))}
-            </div>
+
+                {notifications.length === 0 && <p>No notifications available.</p>}
+
+                <button onClick={goToCurrentBooking}>Go to Current Booking</button>
+
+                <h3>All Bookings</h3>
+                {bookings && bookings.length > 0 && bookings.map((booking) => (
+                    <div key={booking.id}>
+                        <p>Booking ID: {booking.id}</p>
+                        <p>User ID: {booking.user_id}</p>
+                        <p>Driver ID: {booking.driver_id}</p>
+                        <p>Status: {booking.status}</p>
+                        <p>Source: {booking.source.coordinates[0]}, {booking.source.coordinates[1]}</p>
+                        <p>Destination: {booking.destination.coordinates[0]}, {booking.destination.coordinates[1]}</p>
+                        <p>Fare: {booking.fare}</p>
+                    </div>
+                ))}
+            </div> 
         } />
     );
 };

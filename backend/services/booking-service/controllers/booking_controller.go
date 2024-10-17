@@ -105,3 +105,13 @@ func GetBookingByID(c *gin.Context) {
 	}
 	c.JSON(200, booking)
 }
+
+func GetCurrentBookingByDriverID(c *gin.Context) {
+	driverID := c.Param("driverID")
+	log.Printf("Driver ID: %v", driverID)
+	booking, err := services.GetCurrentBookingByDriverID(driverID)
+	if err != nil {
+		c.JSON(200, gin.H{"message": "No booking found"})
+	}
+	c.JSON(200, booking)
+}
