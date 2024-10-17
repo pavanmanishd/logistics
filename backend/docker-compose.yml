@@ -2,7 +2,7 @@ version: '3.7'
 services:
   auth-service:
     build:
-      context: ./auth-service
+      context: ./services/auth-service
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
@@ -14,7 +14,7 @@ services:
   
   booking-service:
     build:
-      context: ./booking-service
+      context: ./services/booking-service
       dockerfile: Dockerfile
     ports:
       - "8081:8081"
@@ -28,7 +28,7 @@ services:
 
   driver-service:
     build:
-      context: ./driver-service
+      context: ./services/driver-service
       dockerfile: Dockerfile
     ports:
       - "8082:8082"
@@ -42,7 +42,7 @@ services:
 
   notification-service:
     build:
-      context: ./notification-service
+      context: ./services/notification-service
       dockerfile: Dockerfile
     ports:
       - "8083:8083"
