@@ -49,7 +49,7 @@ func Health(c *gin.Context) {
 }
 
 func getDriversNearby(loc models.Point, userID, bookingID string) {
-	driverServiceURL := "http://localhost:8082"
+	driverServiceURL := "http://driver-service:8082"
 	// Get drivers nearby
 	httpClient := &http.Client{}
 

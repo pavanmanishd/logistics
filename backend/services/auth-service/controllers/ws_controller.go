@@ -24,7 +24,7 @@ func HandleLocationWSProxy(c *gin.Context) {
     defer clienConn.Close()
     
 
-    driverLocationWS := "ws://localhost:8082/ws/location"
+    driverLocationWS := "ws://driver-service:8082/ws/location"
     serverConn, _, err := websocket.DefaultDialer.Dial(driverLocationWS, nil)
     if err != nil {
         log.Println(err)
@@ -69,7 +69,7 @@ func HandleNotificationWSProxy(c *gin.Context) {
     defer clienConn.Close()
     
     clientId := c.Query("id")
-    notificationWS := "ws://localhost:8083/ws/notification?id=" + clientId
+    notificationWS := "ws://notification-service:8083/ws/notification?id=" + clientId
     serverConn, _, err := websocket.DefaultDialer.Dial(notificationWS, nil)
     if err != nil {
         log.Println(err)

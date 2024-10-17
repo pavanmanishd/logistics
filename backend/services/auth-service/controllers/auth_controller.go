@@ -105,7 +105,7 @@ func RegisterAdditional(c *gin.Context) {
 }
 
 func sendToDriverService(input models.AdditionalAuth) error {
-	url := "http://localhost:8082/new"
+	url := "http://driver-service:8082/new"
 	jsonData, err := json.Marshal(input)
 	log.Printf("Sending data to driver service: %s", string(jsonData))
 	if err != nil {

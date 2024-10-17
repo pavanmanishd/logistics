@@ -30,7 +30,7 @@ func NewMQService() *MQService {
 // Connect establishes a connection to RabbitMQ and opens a channel
 func (mq *MQService) Connect() error {
 	var err error
-	mq.conn, err = amqp.Dial("amqp://guest:guest@localhost:5672/")
+	mq.conn, err = amqp.Dial("amqp://guest:guest@rabbitmq:5672/")
 	if err != nil {
 		return err
 	}
