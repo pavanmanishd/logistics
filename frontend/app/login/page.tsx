@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 
-const authURL = "http://localhost:8080";
+const authURL = "https://"+process.env.NEXT_PUBLIC_IP;
 export default function Login() {
     const [email, setEmail] = useState<string>('');
     const [password, setPassword] = useState<string>('');

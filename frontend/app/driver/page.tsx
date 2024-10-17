@@ -34,7 +34,9 @@ type Booking = {
   
 
 const timerForNotification = 5000; // 5 seconds for each notification
-const bookingsAPIURL = "http://localhost:8080";
+const bookingsAPIURL = "https://"+process.env.NEXT_PUBLIC_IP;
+const bookingsAPIWS  = "wss://"+process.env.NEXT_PUBLIC_IP;
+
 const LocationTracker: React.FC = () => {
     const [ws, setWs] = useState<WebSocket | null>(null);
     const [location, setLocation] = useState<Location>({ latitude: 0, longitude: 0 });
@@ -52,7 +54,7 @@ const LocationTracker: React.FC = () => {
 
     useEffect(() => {
         // Open WebSocket connection for location tracking
-        const socket = new WebSocket("ws://localhost:8080/ws/location");
+        const socket = new WebSocket(bookingsAPIWS+"/ws/location");
 
         socket.onopen = () => {
             console.log("WebSocket connection established.");
@@ -120,7 +122,7 @@ const LocationTracker: React.FC = () => {
             return;
         }
 
-        const socket = new WebSocket(`ws://localhost:8080/ws/notification?id=${driverId}`);
+        const socket = new WebSocket(`${bookingsAPIWS}/ws/notification?id=${driverId}`);
 
         socket.onopen = () => {
             console.log("Notification WebSocket connection established.");

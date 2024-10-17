@@ -43,7 +43,8 @@ const currentStatuses = [
     "Booking Completed",
 ];
 
-const bookingsAPIURL = "http://localhost:8080";
+const bookingsAPIURL = "https://"+process.env.NEXT_PUBLIC_IP;
+const bookingsAPIWS  = "wss://"+process.env.NEXT_PUBLIC_IP;
 
 interface Booking {
     id: string;
@@ -95,7 +96,7 @@ export default function BookingDetails() {
     useEffect(() => {
         if (!booking) return;
         const fetchLocation = () => {
-            axios.get(`http://localhost:8080/driver?id=${booking.driver_id}`)
+            axios.get(`${bookingsAPIURL}/driver?id=${booking.driver_id}`)
             .then((response) => {
                 setCarloc(response.data.coordinates);
             })
@@ -133,7 +134,7 @@ export default function BookingDetails() {
             return;
         }
 
-        const socket = new WebSocket(`ws://localhost:8080/ws/notification?id=${userId}`);
+        const socket = new WebSocket(`${bookingsAPIWS}/ws/notification?id=${userId}`);
 
         socket.onopen = () => {
             console.log("Notification WebSocket connection established.");
@@ -198,8 +199,7 @@ export default function BookingDetails() {
             return;
         }
         // Open WebSocket connection for location tracking
-        const socket = new WebSocket("ws://localhost:8080/ws/location");
-
+        const socket = new WebSocket(`${bookingsAPIWS}/ws/location`);
         socket.onopen = () => {
             console.log("WebSocket connection established.");
             setWs(socket); // Set WebSocket only after the connection is established

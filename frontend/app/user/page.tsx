@@ -15,7 +15,8 @@ function debounce(func: Function, delay: number) {
 }
 
 const accessToken = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
-const bookingAPIURL = "http://localhost:8080";
+const bookingsAPIURL = "https://"+process.env.NEXT_PUBLIC_IP;
+const bookingAPIWS = "wss://"+process.env.NEXT_PUBLIC_IP;
 
 type Location = {
   type: string;
@@ -162,7 +163,7 @@ export default function User() {
         latitude: selectedDestination.geometry.location.lat,
       };
 
-      const response = await axios.post(`${bookingAPIURL}/book`, {
+      const response = await axios.post(`${bookingsAPIURL}/book`, {
         user_id: userId,
         source: sourceLocation,
         destination: destinationLocation,
@@ -189,7 +190,7 @@ export default function User() {
   useEffect(() => {
     if (userId) {
       axios
-        .get(`${bookingAPIURL}/bookings?id=${userId}&type=customer`)
+        .get(`${bookingsAPIURL}/bookings?id=${userId}&type=customer`)
         .then((response) => {
           setBookings(response.data);
         })
@@ -205,7 +206,7 @@ export default function User() {
     }
 
     const socket = new WebSocket(
-      "ws://localhost:8080/ws/notification?id=" + userId
+      bookingAPIWS + "/ws/notification?id=" + userId
     );
 
     socket.onopen = () => {
@@ -221,7 +222,7 @@ export default function User() {
       const msgJSON = JSON.parse(message.data);
       if (msgJSON.type == "update") {
         axios
-          .get(`${bookingAPIURL}/bookings?id=${userId}&type=customer`)
+          .get(`${bookingsAPIURL}/bookings?id=${userId}&type=customer`)
           .then((response) => {
             setBookings(response.data);
           })
