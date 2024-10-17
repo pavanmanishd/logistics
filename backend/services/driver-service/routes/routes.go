@@ -9,6 +9,7 @@ import (
 func SetupRoutes(router *gin.Engine) {
 	services.InitService()
 	services.InitMQService()
+	go services.Consume("driver.available")
 
 	router.GET("/health", controllers.Health)
 	router.POST("/new", controllers.CreateDriver)

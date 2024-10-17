@@ -44,3 +44,7 @@ func GetDriverLocation(driverID string) (models.Point, error) {
 
 	return driver.Location, nil
 }
+
+func UpdateDriverAvailability(driverID string, available bool) error {
+	return driverRepo.UpdateDriverAvailability(driverID, available)
+}

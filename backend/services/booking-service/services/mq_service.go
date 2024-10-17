@@ -158,6 +158,27 @@ func (mq *MQService) ConsumeMessages(queueName string) error {
 					if err != nil {
 						log.Printf("Failed to publish message: %s", err)
 					}
+
+					if data["status"] == "Driver Accepted - Enroute to Source" {
+						err = Publish("driver.available", map[string]interface{}{
+							"action": "driver.available",
+							"driver_id": data["driver_id"].(string),
+							"available": false,
+						})
+						if err != nil {
+							log.Printf("Failed to publish message: %s", err)
+						}
+					} else if data["status"] == "Booking Completed" {
+						err = Publish("driver.available", map[string]interface{}{
+							"action": "driver.available",
+							"driver_id": data["driver_id"].(string),
+							"available": true,
+						})
+						if err != nil {
+							log.Printf("Failed to publish message: %s", err)
+						}
+					}
+
 				} else {
 					log.Printf("Unknown action: %s", data["action"])
 				}

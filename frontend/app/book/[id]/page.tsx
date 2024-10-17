@@ -223,7 +223,9 @@ export default function BookingDetails() {
                     <div>
                         <h2>Change Status</h2>
                         <p>Current Status: {currentStatuses[currentStatusIndex]}</p>
-                        <button onClick={nextStatus}>Next Status</button>
+                        {currentStatusIndex < currentStatuses.length - 1 && (
+                            <button onClick={nextStatus}>Next Status</button>
+                        )}
                     </div>
                 )}
             </div>

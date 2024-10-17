@@ -101,3 +101,57 @@ func InitMQService() {
 func Publish(queueName string, body map[string]interface{}) error {
 	return mqService.PublishMessage(queueName, body)
 }
+
+func (mq *MQService) ConsumeMessage(queueName string) error {
+	// Declare a queue to consume the message from
+	q, err := mq.ch.QueueDeclare(
+		queueName, // name of the queue
+		false,     // durable
+		false,     // delete when unused
+		false,     // exclusive
+		false,     // no-wait
+		nil,       // arguments
+	)
+	if err != nil {
+		return err
+	}
+
+	// Consume the message from the queue
+	msgs, err := mq.ch.Consume(
+		q.Name, // queue
+		"",     // consumer
+		true,   // auto-ack
+		false,  // exclusive
+		false,  // no-local
+		false,  // no-wait
+		nil,    // args
+	)
+	if err != nil {
+		return err
+	}
+
+	forever := make(chan struct{})
+	go func() {
+		for d := range msgs {
+			log.Printf("Received a message: %s", d.Body)
+			var data map[string]interface{}
+			err := json.Unmarshal(d.Body, &data)
+			if err != nil {
+				log.Printf("Failed to parse message: %s", err)
+			}
+			log.Printf("Received message: %s", data)
+
+			if data["action"] == "driver.available" {
+				UpdateDriverAvailability(data["driver_id"].(string), data["available"].(bool))
+			}
+		}
+	}()
+
+	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
+	<-forever
+	return nil
+}
+
+func Consume(queueName string) error {
+	return mqService.ConsumeMessage(queueName)
+}

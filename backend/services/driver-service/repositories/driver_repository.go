@@ -40,7 +40,12 @@ func (repo *DriverRepository) FindDriverByID(id string) (models.Driver, error) {
 }
 
 func (repo *DriverRepository) UpdateDriverAvailability(id string, availability bool) error {
-	_, err := repo.collection.UpdateOne(context.TODO(), bson.M{"_id": id}, bson.M{"$set": bson.M{"avaliable": availability}})
+	did, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+	log.Printf("Updating availability for driver: %s", id)
+	_, err = repo.collection.UpdateOne(context.TODO(), bson.M{"_id": did}, bson.M{"$set": bson.M{"avaliable": availability}})
 	return err
 }
 
