@@ -73,14 +73,25 @@ func getDriversNearby(loc models.Point, userID, bookingID string) {
 
 func GetBookings(c *gin.Context) {
 	userID := c.Query("id")
-	if userID != "" {
-		bookings, err := services.GetBookingsByUserID(userID)
-		if err != nil {
-			c.JSON(500, gin.H{"error": err.Error()})
+	role := c.Query("type")
+	if userID != "" && role != "" {
+		if role == "driver"{
+			bookings, err := services.GetBookingsByDriverID(userID)
+			if err != nil {
+				c.JSON(500, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(200, bookings)
+			return
+		} else {
+			bookings, err := services.GetBookingsByUserID(userID)
+			if err != nil {
+				c.JSON(500, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(200, bookings)
 			return
 		}
-		c.JSON(200, bookings)
-		return
 	}
 	c.JSON(400, gin.H{"error": "User ID is required"})
 }
