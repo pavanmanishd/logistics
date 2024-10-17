@@ -34,7 +34,7 @@ type Booking = {
   
 
 const timerForNotification = 5000; // 5 seconds for each notification
-const bookingsAPIURL = "http://localhost:8081";
+const bookingsAPIURL = "http://localhost:8080";
 const LocationTracker: React.FC = () => {
     const [ws, setWs] = useState<WebSocket | null>(null);
     const [location, setLocation] = useState<Location>({ latitude: 0, longitude: 0 });

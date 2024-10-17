@@ -15,7 +15,7 @@ function debounce(func: Function, delay: number) {
 }
 
 const accessToken = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
-const bookingAPIURL = "http://localhost:8081";
+const bookingAPIURL = "http://localhost:8080";
 
 type Location = {
   type: string;

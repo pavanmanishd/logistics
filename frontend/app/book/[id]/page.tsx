@@ -43,7 +43,7 @@ const currentStatuses = [
     "Booking Completed",
 ];
 
-const bookingsAPIURL = "http://localhost:8081";
+const bookingsAPIURL = "http://localhost:8080";
 
 interface Booking {
     id: string;
@@ -95,7 +95,7 @@ export default function BookingDetails() {
     useEffect(() => {
         if (!booking) return;
         const fetchLocation = () => {
-            axios.get(`http://localhost:8082/driver?id=${booking.driver_id}`)
+            axios.get(`http://localhost:8080/driver?id=${booking.driver_id}`)
             .then((response) => {
                 setCarloc(response.data.coordinates);
             })
