@@ -1,8 +1,16 @@
-### System Design Document
+# Logistics Platform
 
-**System Overview**
+## Tech Stack
 
-This document outlines the design of a logistics platform capable of handling 10,000 requests per second, supporting real-time tracking, price estimation, and driver job assignment. With a user base of 50 million users and 100,000 drivers globally, the system is optimized for scalability, high performance, and real-time data handling.
+The logistics platform is implemented using the following tech stack:
+
+- Backend: Go for high performance and efficient concurrency handling
+- Frontend: React.js for web application, TailwindCSS for styling
+- Database: MongoDB for flexible, scalable data storage
+- Message Queue: RabbitMQ for asynchronous processing
+- Containerization: Docker for consistent environments
+- Load Balancing: Nginx for distributing incoming traffic
+- Real-time Communication: WebSockets for live updates
 
 ---
 
