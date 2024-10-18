@@ -15,8 +15,8 @@ function debounce(func: Function, delay: number) {
 }
 
 const accessToken = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
-const bookingsAPIURL = "https://" + process.env.NEXT_PUBLIC_IP;
-const bookingAPIWS = "wss://" + process.env.NEXT_PUBLIC_IP;
+const bookingsAPIURL = "http://" + process.env.NEXT_PUBLIC_IP;
+const bookingAPIWS = "ws://" + process.env.NEXT_PUBLIC_IP;
 
 type Location = {
   type: string;
@@ -37,9 +37,13 @@ export default function User() {
   const [source, setSource] = useState<string>("");
   const [destination, setDestination] = useState<string>("");
   const [sourceSuggestions, setSourceSuggestions] = useState<any[]>([]);
-  const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>([]);
+  const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>(
+    []
+  );
   const [selectedSource, setSelectedSource] = useState<any | null>(null);
-  const [selectedDestination, setSelectedDestination] = useState<any | null>(null);
+  const [selectedDestination, setSelectedDestination] = useState<any | null>(
+    null
+  );
   const [fare, setFare] = useState<number | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const router = useRouter();
@@ -52,7 +56,9 @@ export default function User() {
   const search = async (text: string, type: "source" | "destination") => {
     if (!text) return;
     try {
-      const response = await axios.get(`https://api.olamaps.io/places/v1/autocomplete?input=${text}&api_key=${accessToken}`);
+      const response = await axios.get(
+        `https://api.olamaps.io/places/v1/autocomplete?input=${text}&api_key=${accessToken}`
+      );
       if (type === "source") setSourceSuggestions(response.data.predictions);
       else setDestinationSuggestions(response.data.predictions);
     } catch (error) {
@@ -101,7 +107,8 @@ export default function User() {
       const costPerMinute = 2;
       const distanceInKm = distanceInMeters / 1000;
       const durationInMinutes = durationInSeconds / 60;
-      const estimatedFare = baseFare + costPerKm * distanceInKm + costPerMinute * durationInMinutes;
+      const estimatedFare =
+        baseFare + costPerKm * distanceInKm + costPerMinute * durationInMinutes;
       setFare(estimatedFare);
     } catch (error) {
       console.error("Error calculating distance and fare:", error);
@@ -115,7 +122,9 @@ export default function User() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSource || !selectedDestination || fare === null) {
-      alert("Please enter both valid source and destination, and ensure fare is calculated.");
+      alert(
+        "Please enter both valid source and destination, and ensure fare is calculated."
+      );
       return;
     }
     try {
@@ -157,7 +166,9 @@ export default function User() {
 
   useEffect(() => {
     if (!userId) return;
-    const socket = new WebSocket(bookingAPIWS + "/ws/notification?id=" + userId);
+    const socket = new WebSocket(
+      bookingAPIWS + "/ws/notification?id=" + userId
+    );
     socket.onopen = () => console.log("WebSocket connection established.");
     socket.onerror = (error) => console.error("WebSocket error:", error);
     socket.onmessage = (message) => {
@@ -184,14 +195,29 @@ export default function User() {
         <>
           <div className="p-6">
             <h3 className="text-2xl font-bold mb-4">Book</h3>
-            <form onSubmit={handleSubmit} className="mb-6 bg-white p-4 rounded-lg shadow-md">
+            <form
+              onSubmit={handleSubmit}
+              className="mb-6 bg-white p-4 rounded-lg shadow-md"
+            >
               <div className="mb-4">
-                <label htmlFor="Source" className="block text-gray-700">Source</label>
-                <input type="text" id="Source" value={source} onChange={handleSourceChange} className="w-full p-2 border rounded text-black" />
+                <label htmlFor="Source" className="block text-gray-700">
+                  Source
+                </label>
+                <input
+                  type="text"
+                  id="Source"
+                  value={source}
+                  onChange={handleSourceChange}
+                  className="w-full p-2 border rounded text-black"
+                />
                 {sourceSuggestions.length > 0 && (
                   <ul className="mt-2 bg-white border rounded shadow-md">
                     {sourceSuggestions.map((suggestion, index) => (
-                      <li key={index} onClick={() => handleSourceClick(suggestion)} className="p-2 cursor-pointer hover:bg-gray-200 text-black">
+                      <li
+                        key={index}
+                        onClick={() => handleSourceClick(suggestion)}
+                        className="p-2 cursor-pointer hover:bg-gray-200 text-black"
+                      >
                         {suggestion.description}
                       </li>
                     ))}
@@ -199,12 +225,24 @@ export default function User() {
                 )}
               </div>
               <div className="mb-4">
-                <label htmlFor="Destination" className="block text-gray-700">Destination</label>
-                <input type="text" id="Destination" value={destination} onChange={handleDestinationChange} className="w-full p-2 border rounded text-black" />
+                <label htmlFor="Destination" className="block text-gray-700">
+                  Destination
+                </label>
+                <input
+                  type="text"
+                  id="Destination"
+                  value={destination}
+                  onChange={handleDestinationChange}
+                  className="w-full p-2 border rounded text-black"
+                />
                 {destinationSuggestions.length > 0 && (
                   <ul className="mt-2 bg-white border rounded shadow-md">
                     {destinationSuggestions.map((suggestion, index) => (
-                      <li key={index} onClick={() => handleDestinationClick(suggestion)} className="p-2 cursor-pointer hover:bg-gray-200 text-black">
+                      <li
+                        key={index}
+                        onClick={() => handleDestinationClick(suggestion)}
+                        className="p-2 cursor-pointer hover:bg-gray-200 text-black"
+                      >
                         {suggestion.description}
                       </li>
                     ))}
@@ -212,24 +250,56 @@ export default function User() {
                 )}
               </div>
               <div className="mb-4">
-                <p className="text-gray-700">Estimated Fare: {fare !== null ? `Rs.${fare.toFixed(2)}` : "Calculating..."}</p>
+                <p className="text-gray-700">
+                  Estimated Fare:{" "}
+                  {fare !== null ? `Rs.${fare.toFixed(2)}` : "Calculating..."}
+                </p>
               </div>
-              <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Book</button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              >
+                Book
+              </button>
             </form>
           </div>
           <div className="p-6">
             <h3 className="text-2xl font-bold mb-4">All Bookings</h3>
             {bookings && bookings.length > 0 ? (
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {bookings.map((booking) => (
-                  <li key={booking.id} onClick={() => handleClick(booking.id)} className="p-4 bg-white rounded-lg shadow-md cursor-pointer hover:bg-gray-100">
-                    <p className="text-gray-700"><span className="font-semibold">Booking ID:</span> {booking.id}</p>
-                    <p className="text-gray-700"><span className="font-semibold">User ID:</span> {booking.user_id}</p>
-                    <p className="text-gray-700"><span className="font-semibold">Driver ID:</span> {booking.driver_id}</p>
-                    <p className="text-gray-700"><span className="font-semibold">Status:</span> {booking.status}</p>
-                    <p className="text-gray-700"><span className="font-semibold">Source:</span> {booking.source.coordinates.join(", ")}</p>
-                    <p className="text-gray-700"><span className="font-semibold">Destination:</span> {booking.destination.coordinates.join(", ")}</p>
-                    <p className="text-gray-800 font-bold">Rs.{booking.fare.toFixed(2)}</p>
+                {bookings.reverse().map((booking) => (
+                  <li
+                    key={booking.id}
+                    onClick={() => handleClick(booking.id)}
+                    className="p-4 bg-white rounded-lg shadow-md cursor-pointer hover:bg-gray-100"
+                  >
+                    <p className="text-gray-700">
+                      <span className="font-semibold">Booking ID:</span>{" "}
+                      {booking.id}
+                    </p>
+                    <p className="text-gray-700">
+                      <span className="font-semibold">User ID:</span>{" "}
+                      {booking.user_id}
+                    </p>
+                    <p className="text-gray-700">
+                      <span className="font-semibold">Driver ID:</span>{" "}
+                      {booking.driver_id}
+                    </p>
+                    <p className="text-gray-700">
+                      <span className="font-semibold">Status:</span>{" "}
+                      {booking.status}
+                    </p>
+                    <p className="text-gray-700">
+                      <span className="font-semibold">Source:</span>{" "}
+                      {booking.source.coordinates.join(", ")}
+                    </p>
+                    <p className="text-gray-700">
+                      <span className="font-semibold">Destination:</span>{" "}
+                      {booking.destination.coordinates.join(", ")}
+                    </p>
+                    <p className="text-gray-800 font-bold">
+                      Rs.{booking.fare.toFixed(2)}
+                    </p>
                   </li>
                 ))}
               </ul>
