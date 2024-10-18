@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useRouter } from 'next/navigation';
 
 const authURL = "https://"+process.env.NEXT_PUBLIC_IP;
+
 export default function Register() {
     const [name, setName] = useState<string>('');
     const [email, setEmail] = useState<string>('');
@@ -13,6 +14,7 @@ export default function Register() {
     const [license, setLicense] = useState<string>('');
     const [vehicle, setVehicle] = useState<string>('');
     const router = useRouter();
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -48,85 +50,105 @@ export default function Register() {
             })
             .catch((error) => {
                 console.error(error);
-            });   
+            });
     };
 
     return (
-        <div>
-            <h1>Register</h1>
-            <form onSubmit={handleSubmit}>
-                <div>
-                    <label htmlFor="name">Name</label>
-                    <input
-                        type="text"
-                        id="name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)} // Controlled input
-                    />
-                </div>
-                <div>
-                    <label htmlFor="email">Email</label>
-                    <input
-                        type="email"
-                        id="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)} // Controlled input
-                    />
-                </div>
-                <div>
-                    <label htmlFor="password">Password</label>
-                    <input
-                        type="password"
-                        id="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)} // Controlled input
-                    />
-                </div>
-                <div>
-                    <label htmlFor="confirmPassword">Confirm Password</label>
-                    <input
-                        type="password"
-                        id="confirmPassword"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)} // Controlled input
-                    />
-                </div>
-                <div>
-                    <label htmlFor="role">Role</label>
-                    <select
-                        id="role"
-                        value={role}
-                        onChange={(e) => setRole(e.target.value)} // Controlled input
-                    >
-                        <option value="customer">Customer</option>
-                        <option value="driver">Driver</option>
-                    </select>
-                </div>
-                {(role == "driver") && (
+        <div className="flex min-h-screen justify-center items-center bg-gray-100">
+            <div className="w-full max-w-md bg-white shadow-lg rounded-lg p-8">
+                <h1 className="text-2xl font-bold text-center mb-6 text-gray-700">Register</h1>
+                <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <div>
-                            <label htmlFor="license">License No</label>
-                            <input
-                                type="text"
-                                id="license"
-                                value={license}
-                                onChange={(e) => setLicense(e.target.value)} // Controlled input
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="vehicle">Vehicle No</label>
-                            <input
-                                type="text"
-                                id="vehicle"
-                                value={vehicle}
-                                onChange={(e) => setVehicle(e.target.value)} // Controlled input
-                            />
-                        </div>
+                        <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name</label>
+                        <input
+                            type="text"
+                            id="name"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
+                            required
+                        />
                     </div>
-                )}
-
-                <button type="submit">Register</button>
-            </form>
+                    <div>
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
+                        <input
+                            type="email"
+                            id="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
+                        <input
+                            type="password"
+                            id="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">Confirm Password</label>
+                        <input
+                            type="password"
+                            id="confirmPassword"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="role" className="block text-sm font-medium text-gray-700">Role</label>
+                        <select
+                            id="role"
+                            value={role}
+                            onChange={(e) => setRole(e.target.value)}
+                            className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
+                            required
+                        >
+                            <option value="customer">Customer</option>
+                            <option value="driver">Driver</option>
+                        </select>
+                    </div>
+                    {role === "driver" && (
+                        <div className="space-y-6">
+                            <div>
+                                <label htmlFor="license" className="block text-sm font-medium text-gray-700">License No</label>
+                                <input
+                                    type="text"
+                                    id="license"
+                                    value={license}
+                                    onChange={(e) => setLicense(e.target.value)}
+                                    className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="vehicle" className="block text-sm font-medium text-gray-700">Vehicle No</label>
+                                <input
+                                    type="text"
+                                    id="vehicle"
+                                    value={vehicle}
+                                    onChange={(e) => setVehicle(e.target.value)}
+                                    className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
+                                    required
+                                />
+                            </div>
+                        </div>
+                    )}
+                    <button
+                        type="submit"
+                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                        Register
+                    </button>
+                </form>
+            </div>
         </div>
     );
 }

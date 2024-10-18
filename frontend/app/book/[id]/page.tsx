@@ -263,15 +263,31 @@ export default function BookingDetails() {
 
     return (
         <ProtectedRoute element={
-            <div>
-                <h1>Booking Details</h1>
-                <p>Booking ID: {bookingId}</p>
-                <p>User ID: {booking?.user_id}</p>
-                <p>Driver ID: {booking?.driver_id}</p>
-                <p>Status: {currentStatuses[currentStatusIndex]}</p>
-                <p>Source: {booking?.source.coordinates[0]}, {booking?.source.coordinates[1]}</p>
-                <p>Destination: {booking?.destination.coordinates[0]}, {booking?.destination.coordinates[1]}</p>
-                <p>Fare: {booking?.fare}</p>
+            <div className="p-6 min-h-screen">
+                <h1 className="text-3xl font-bold mb-4">Booking Details</h1>
+                {booking ? (
+                <div className="bg-white p-6 rounded-lg shadow-md mb-4">
+                    <p className="text-gray-700"><span className="font-semibold">Booking ID:</span> {booking.id}</p>
+                    <p className="text-gray-700"><span className="font-semibold">User ID:</span> {booking.user_id}</p>
+                    <p className="text-gray-700"><span className="font-semibold">Driver ID:</span> {booking.driver_id}</p>
+                    <p className="text-gray-700"><span className="font-semibold">Status:</span> {booking.status}</p>
+                    <p className="text-gray-700"><span className="font-semibold">Source:</span> {booking.source.coordinates.join(', ')}</p>
+                    <p className="text-gray-700"><span className="font-semibold">Destination:</span> {booking.destination.coordinates.join(', ')}</p>
+                    <p className="text-gray-800 font-bold">Rs.{booking.fare.toFixed(2)}</p>
+                    {userRole === "driver" && 
+                    currentStatusIndex < currentStatuses.length - 1 && 
+                    (
+                            <button 
+                            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                            onClick={nextStatus}
+                            >
+                                Next Status
+                            </button>
+                    )}
+                </div>
+                ) : (
+                    <p className="text-gray-500">Loading booking details...</p>
+                )}
 
                 {/* Conditionally render the Map only if booking data is available */}
                 {booking &&
@@ -309,17 +325,6 @@ export default function BookingDetails() {
                         </Marker>
                     </MapContainer>
                 }
-
-                {/* Display button only for drivers */}
-                {userRole === "driver" && (
-                    <div>
-                        <h2>Change Status</h2>
-                        <p>Current Status: {currentStatuses[currentStatusIndex]}</p>
-                        {currentStatusIndex < currentStatuses.length - 1 && (
-                            <button onClick={nextStatus}>Next Status</button>
-                        )}
-                    </div>
-                )}
             </div>
         }/>
     );

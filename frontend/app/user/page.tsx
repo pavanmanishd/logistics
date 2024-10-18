@@ -3,7 +3,7 @@ import ProtectedRoute from "@/validation/ProtectedRoute";
 import axios from "axios";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-// Debounce function to limit API calls
+
 function debounce(func: Function, delay: number) {
   let timer: NodeJS.Timeout;
   return (...args: any[]) => {
@@ -15,12 +15,12 @@ function debounce(func: Function, delay: number) {
 }
 
 const accessToken = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
-const bookingsAPIURL = "https://"+process.env.NEXT_PUBLIC_IP;
-const bookingAPIWS = "wss://"+process.env.NEXT_PUBLIC_IP;
+const bookingsAPIURL = "https://" + process.env.NEXT_PUBLIC_IP;
+const bookingAPIWS = "wss://" + process.env.NEXT_PUBLIC_IP;
 
 type Location = {
   type: string;
-  coordinates: [number, number]; // [longitude, latitude]
+  coordinates: [number, number];
 };
 
 type Booking = {
@@ -37,98 +37,71 @@ export default function User() {
   const [source, setSource] = useState<string>("");
   const [destination, setDestination] = useState<string>("");
   const [sourceSuggestions, setSourceSuggestions] = useState<any[]>([]);
-  const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>(
-    []
-  );
+  const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>([]);
   const [selectedSource, setSelectedSource] = useState<any | null>(null);
-  const [selectedDestination, setSelectedDestination] = useState<any | null>(
-    null
-  );
+  const [selectedDestination, setSelectedDestination] = useState<any | null>(null);
   const [fare, setFare] = useState<number | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     const userId = localStorage.getItem("id");
-    if (userId) {
-      setUserId(userId);
-    }
+    if (userId) setUserId(userId);
   }, []);
 
-  // Debounced search function
   const search = async (text: string, type: "source" | "destination") => {
     if (!text) return;
-
     try {
-      const response = await axios.get(
-        `https://api.olamaps.io/places/v1/autocomplete?input=${text}&api_key=${accessToken}`
-      );
-      if (type === "source") {
-        setSourceSuggestions(response.data.predictions);
-      } else if (type === "destination") {
-        setDestinationSuggestions(response.data.predictions);
-      }
+      const response = await axios.get(`https://api.olamaps.io/places/v1/autocomplete?input=${text}&api_key=${accessToken}`);
+      if (type === "source") setSourceSuggestions(response.data.predictions);
+      else setDestinationSuggestions(response.data.predictions);
     } catch (error) {
       console.error("Error searching places:", error);
     }
   };
 
-  // Memoized debounce function
   const debouncedSearch = useCallback(debounce(search, 500), [accessToken]);
 
-  // Handle source input change
   const handleSourceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const text = e.target.value;
     setSource(text);
     debouncedSearch(text, "source");
   };
 
-  // Handle destination input change
   const handleDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const text = e.target.value;
     setDestination(text);
     debouncedSearch(text, "destination");
   };
 
-  // Handle suggestion click for source
   const handleSourceClick = (suggestion: any) => {
     setSource(suggestion.description);
     setSelectedSource(suggestion);
     setSourceSuggestions([]);
   };
 
-  // Handle suggestion click for destination
   const handleDestinationClick = (suggestion: any) => {
     setDestination(suggestion.description);
     setSelectedDestination(suggestion);
     setDestinationSuggestions([]);
   };
 
-  // Fetch distance and calculate fare
   const fetchDistanceAndCalculateFare = useCallback(async () => {
     if (!selectedSource || !selectedDestination) return;
-
     try {
       const sourceCoords = selectedSource.geometry.location;
       const destinationCoords = selectedDestination.geometry.location;
-
       const response = await axios.get(
         `https://api.olamaps.io/routing/v1/distanceMatrix?origins=${sourceCoords.lat},${sourceCoords.lng}&destinations=${destinationCoords.lat},${destinationCoords.lng}&api_key=${accessToken}`
       );
-
       const distanceInMeters = response.data.rows[0].elements[0].distance;
       const durationInSeconds = response.data.rows[0].elements[0].duration;
-
       const baseFare = 40;
       const costPerKm = 15;
       const costPerMinute = 2;
-
       const distanceInKm = distanceInMeters / 1000;
       const durationInMinutes = durationInSeconds / 60;
-
-      const estimatedFare =
-        baseFare + costPerKm * distanceInKm + costPerMinute * durationInMinutes;
-
+      const estimatedFare = baseFare + costPerKm * distanceInKm + costPerMinute * durationInMinutes;
       setFare(estimatedFare);
     } catch (error) {
       console.error("Error calculating distance and fare:", error);
@@ -139,16 +112,12 @@ export default function User() {
     fetchDistanceAndCalculateFare();
   }, [selectedSource, selectedDestination, fetchDistanceAndCalculateFare]);
 
-  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSource || !selectedDestination || fare === null) {
-      alert(
-        "Please enter both valid source and destination, and ensure fare is calculated."
-      );
+      alert("Please enter both valid source and destination, and ensure fare is calculated.");
       return;
     }
-
     try {
       if (!userId) {
         alert("User not authenticated!");
@@ -162,16 +131,13 @@ export default function User() {
         longitude: selectedDestination.geometry.location.lng,
         latitude: selectedDestination.geometry.location.lat,
       };
-
       const response = await axios.post(`${bookingsAPIURL}/book`, {
         user_id: userId,
         source: sourceLocation,
         destination: destinationLocation,
         fare: fare,
       });
-
       console.log("Booking successful:", response.data);
-      // router.push("/book/all");
     } catch (error) {
       console.error("Error booking:", error);
       alert("Error booking!");
@@ -181,57 +147,28 @@ export default function User() {
   const [bookings, setBookings] = useState<Booking[]>([]);
 
   useEffect(() => {
-    const id = localStorage.getItem("id");
-    if (id) {
-      setUserId(id);
-    }
-  }, []);
-
-  useEffect(() => {
     if (userId) {
       axios
         .get(`${bookingsAPIURL}/bookings?id=${userId}&type=customer`)
-        .then((response) => {
-          setBookings(response.data);
-        })
-        .catch((error) => {
-          console.error(error);
-        });
+        .then((response) => setBookings(response.data))
+        .catch((error) => console.error(error));
     }
   }, [userId]);
 
   useEffect(() => {
-    if (!userId) {
-      return;
-    }
-
-    const socket = new WebSocket(
-      bookingAPIWS + "/ws/notification?id=" + userId
-    );
-
-    socket.onopen = () => {
-      console.log("WebSocket connection established.");
-    };
-
-    socket.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
-
+    if (!userId) return;
+    const socket = new WebSocket(bookingAPIWS + "/ws/notification?id=" + userId);
+    socket.onopen = () => console.log("WebSocket connection established.");
+    socket.onerror = (error) => console.error("WebSocket error:", error);
     socket.onmessage = (message) => {
-      console.log("WebSocket message:", message.data);
       const msgJSON = JSON.parse(message.data);
-      if (msgJSON.type == "update") {
+      if (msgJSON.type === "update") {
         axios
           .get(`${bookingsAPIURL}/bookings?id=${userId}&type=customer`)
-          .then((response) => {
-            setBookings(response.data);
-          })
-          .catch((error) => {
-            console.error(error);
-          });
+          .then((response) => setBookings(response.data))
+          .catch((error) => console.error(error));
       }
     };
-
     return () => {
       socket.close();
     };
@@ -245,82 +182,59 @@ export default function User() {
     <ProtectedRoute
       element={
         <>
-          <div>
-            <h1>Book</h1>
-            <form onSubmit={handleSubmit}>
-              <div>
-                <label htmlFor="Source">Source</label>
-                <input
-                  type="text"
-                  id="Source"
-                  value={source}
-                  onChange={handleSourceChange}
-                />
+          <div className="p-6">
+            <h3 className="text-2xl font-bold mb-4">Book</h3>
+            <form onSubmit={handleSubmit} className="mb-6 bg-white p-4 rounded-lg shadow-md">
+              <div className="mb-4">
+                <label htmlFor="Source" className="block text-gray-700">Source</label>
+                <input type="text" id="Source" value={source} onChange={handleSourceChange} className="w-full p-2 border rounded" />
                 {sourceSuggestions.length > 0 && (
-                  <ul>
+                  <ul className="mt-2 bg-white border rounded shadow-md">
                     {sourceSuggestions.map((suggestion, index) => (
-                      <li
-                        key={index}
-                        onClick={() => handleSourceClick(suggestion)}
-                        style={{ cursor: "pointer" }}
-                      >
+                      <li key={index} onClick={() => handleSourceClick(suggestion)} className="p-2 cursor-pointer hover:bg-gray-200">
                         {suggestion.description}
                       </li>
                     ))}
                   </ul>
                 )}
               </div>
-              <div>
-                <label htmlFor="Destination">Destination</label>
-                <input
-                  type="text"
-                  id="Destination"
-                  value={destination}
-                  onChange={handleDestinationChange}
-                />
+              <div className="mb-4">
+                <label htmlFor="Destination" className="block text-gray-700">Destination</label>
+                <input type="text" id="Destination" value={destination} onChange={handleDestinationChange} className="w-full p-2 border rounded" />
                 {destinationSuggestions.length > 0 && (
-                  <ul>
+                  <ul className="mt-2 bg-white border rounded shadow-md">
                     {destinationSuggestions.map((suggestion, index) => (
-                      <li
-                        key={index}
-                        onClick={() => handleDestinationClick(suggestion)}
-                        style={{ cursor: "pointer" }}
-                      >
+                      <li key={index} onClick={() => handleDestinationClick(suggestion)} className="p-2 cursor-pointer hover:bg-gray-200">
                         {suggestion.description}
                       </li>
                     ))}
                   </ul>
                 )}
               </div>
-              <div>
-                <p>
-                  Estimated Fare:{" "}
-                  {fare !== null ? `Rs.${fare.toFixed(2)}` : "Calculating..."}
-                </p>
-                <button type="submit">Book</button>
+              <div className="mb-4">
+                <p className="text-gray-700">Estimated Fare: {fare !== null ? `Rs.${fare.toFixed(2)}` : "Calculating..."}</p>
               </div>
+              <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Book</button>
             </form>
           </div>
-          <div>
-            <h1>All Bookings</h1>
+          <div className="p-6">
+            <h3 className="text-2xl font-bold mb-4">All Bookings</h3>
             {bookings && bookings.length > 0 ? (
-              <ul>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {bookings.map((booking) => (
-                  <li key={booking.id} onClick={() => handleClick(booking.id)}>
-                    <p>Booking ID: {booking.id}</p>
-                    <p>User ID: {booking.user_id}</p>
-                    <p>Driver ID: {booking.driver_id}</p>
-                    <p>Status: {booking.status}</p>
-                    <p>Source: {booking.source.coordinates.join(", ")}</p>
-                    <p>
-                      Destination: {booking.destination.coordinates.join(", ")}
-                    </p>
-                    <p>Fare: ${booking.fare.toFixed(2)}</p>
+                  <li key={booking.id} onClick={() => handleClick(booking.id)} className="p-4 bg-white rounded-lg shadow-md cursor-pointer hover:bg-gray-100">
+                    <p className="text-gray-700"><span className="font-semibold">Booking ID:</span> {booking.id}</p>
+                    <p className="text-gray-700"><span className="font-semibold">User ID:</span> {booking.user_id}</p>
+                    <p className="text-gray-700"><span className="font-semibold">Driver ID:</span> {booking.driver_id}</p>
+                    <p className="text-gray-700"><span className="font-semibold">Status:</span> {booking.status}</p>
+                    <p className="text-gray-700"><span className="font-semibold">Source:</span> {booking.source.coordinates.join(", ")}</p>
+                    <p className="text-gray-700"><span className="font-semibold">Destination:</span> {booking.destination.coordinates.join(", ")}</p>
+                    <p className="text-gray-800 font-bold">Rs.{booking.fare.toFixed(2)}</p>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p>No bookings found.</p>
+              <p className="text-gray-500">No bookings found.</p>
             )}
           </div>
         </>

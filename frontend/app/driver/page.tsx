@@ -9,18 +9,18 @@ interface Location {
 }
 
 interface Notification {
-    id: string; // Unique identifier for each notification
+    id: string;
     booking_id: string;
     driver_id: string;
     user_id: string;
     message: string;
-    timer: NodeJS.Timeout; // Reference to the timer for auto-rejection
+    timer: NodeJS.Timeout;
 }
 
 type LocationType = {
     type: string;
-    coordinates: [number, number]; // [longitude, latitude]
-  };
+    coordinates: [number, number];
+};
 
 type Booking = {
     id: string;
@@ -31,85 +31,46 @@ type Booking = {
     destination: LocationType;
     fare: number;
 };
-  
 
-const timerForNotification = 5000; // 5 seconds for each notification
-const bookingsAPIURL = "https://"+process.env.NEXT_PUBLIC_IP;
-const bookingsAPIWS  = "wss://"+process.env.NEXT_PUBLIC_IP;
+const timerForNotification = 5000;
+const bookingsAPIURL = "https://" + process.env.NEXT_PUBLIC_IP;
+const bookingsAPIWS = "wss://" + process.env.NEXT_PUBLIC_IP;
 
 const LocationTracker: React.FC = () => {
     const [ws, setWs] = useState<WebSocket | null>(null);
     const [location, setLocation] = useState<Location>({ latitude: 0, longitude: 0 });
     const [driverId, setDriverId] = useState<string | null>(null);
-    const [notifications, setNotifications] = useState<Notification[]>([]); // Store multiple notifications
+    const [notifications, setNotifications] = useState<Notification[]>([]);
     const [notificationWs, setNotificationWs] = useState<WebSocket | null>(null);
+    const [bookings, setBookings] = useState<Booking[]>([]);
 
     useEffect(() => {
-        // Get driver ID from local storage
         const driverId = localStorage.getItem("id");
-        if (driverId) {
-            setDriverId(driverId);
-        }
+        if (driverId) setDriverId(driverId);
     }, []);
 
     useEffect(() => {
-        // Open WebSocket connection for location tracking
-        const socket = new WebSocket(bookingsAPIWS+"/ws/location");
-
-        socket.onopen = () => {
-            console.log("WebSocket connection established.");
-            setWs(socket); // Set WebSocket only after the connection is established
-        };
-
-        socket.onerror = (error) => {
-            console.error("WebSocket error:", error);
-        };
-
-        return () => {
-            socket.close();
-        };
+        const socket = new WebSocket(bookingsAPIWS + "/ws/location");
+        socket.onopen = () => setWs(socket);
+        socket.onerror = (error) => console.error("WebSocket error:", error);
+        return () => socket.close();
     }, []);
 
     useEffect(() => {
         if (ws && ws.readyState === WebSocket.OPEN) {
-            // Send location immediately when the WebSocket connection is open
-            // sendLocation();
-    
-            // Start the 5-second interval to send the location repeatedly
-            const interval = setInterval(() => {
-                sendLocation();
-            }, 5000);
-    
-            // Clean up the interval when the component unmounts or the WebSocket closes
-            return () => {
-                clearInterval(interval);
-            };
+            const interval = setInterval(() => sendLocation(), 5000);
+            return () => clearInterval(interval);
         }
-    }, [ws, ws?.readyState, location]);
-    
+    }, [ws, location]);
 
     const sendLocation = () => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition((position) => {
                 const { latitude, longitude } = position.coords;
                 setLocation({ latitude, longitude });
-
-                const jsonData = JSON.stringify({
-                    latitude: latitude,
-                    longitude: longitude,
-                    driver_id: driverId,
-                });
-
-                console.log("Sending location:", jsonData);
-
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                    if (!driverId) {
-                        console.error("Driver ID is not set.");
-                        return;
-                    }
+                if (ws && ws.readyState === WebSocket.OPEN && driverId) {
+                    const jsonData = JSON.stringify({ latitude, longitude, driver_id: driverId });
                     ws.send(jsonData);
-                } else {
-                    console.error("WebSocket connection is not open.");
                 }
             });
         } else {
@@ -118,151 +79,140 @@ const LocationTracker: React.FC = () => {
     };
 
     useEffect(() => {
-        if (!driverId) {
-            return;
-        }
-
+        if (!driverId) return;
         const socket = new WebSocket(`${bookingsAPIWS}/ws/notification?id=${driverId}`);
-
-        socket.onopen = () => {
-            console.log("Notification WebSocket connection established.");
-            setNotificationWs(socket);
-        };
-
+        socket.onopen = () => setNotificationWs(socket);
         socket.onmessage = (event) => {
-            console.log("WebSocket notification received:", event.data);
-
             const jsonData = JSON.parse(event.data);
-
-            if (jsonData.type == "ask") {
+            if (jsonData.type === "ask") {
                 const parsedData = jsonData.body;
                 const newNotification: Notification = {
-                    id: Date.now().toString(), // Create a unique ID for each notification
-                    booking_id: parsedData.booking_id, // Extract booking_id
-                    driver_id: parsedData.driver_id,   // Extract driver_id
-                    user_id: parsedData.user_id,       // Extract user_id
+                    id: Date.now().toString(),
+                    booking_id: parsedData.booking_id,
+                    driver_id: parsedData.driver_id,
+                    user_id: parsedData.user_id,
                     message: event.data,
                     timer: setTimeout(() => {
-                        rejectNotification(Date.now().toString(), parsedData.booking_id, parsedData.driver_id, parsedData.user_id); // Reject on timeout
-                    }, timerForNotification)
+                        rejectNotification(Date.now().toString(), parsedData.booking_id, parsedData.driver_id, parsedData.user_id);
+                    }, timerForNotification),
                 };
-
-                setNotifications((prevNotifications) => [...prevNotifications, newNotification]); // Add to the queue
-            } else if(jsonData.type == "update") {
+                setNotifications((prev) => [...prev, newNotification]);
+            } else if (jsonData.type === "update") {
                 window.location.reload();
             }
         };
-
-        socket.onerror = (error) => {
-            console.error("Notification WebSocket error:", error);
-        };
-
-        return () => {
-            socket.close();
-        };
+        return () => socket.close();
     }, [driverId]);
 
     const acceptNotification = (id: string, booking_id: string, driver_id: string, user_id: string) => {
-        console.log("Notification accepted.");
-
-        // Send acceptance for the accepted notification along with booking_id and driver_id
         if (notificationWs && driverId) {
-            notificationWs.send(JSON.stringify({ driver_id, action: "driver.update",  status: "Driver Accepted - Enroute to Source", booking_id, user_id }));
+            notificationWs.send(JSON.stringify({ driver_id, action: "driver.update", status: "Driver Accepted - Enroute to Source", booking_id, user_id }));
+            notifications.forEach((notification) => {
+                if (notification.id !== id) {
+                    rejectNotification(notification.id, notification.booking_id, notification.driver_id, notification.user_id);
+                }
+            });
+            setNotifications([]);
         }
-
-        // Reject all other notifications
-        notifications.forEach((notification) => {
-            if (notification.id !== id) {
-                rejectNotification(notification.id, notification.booking_id, notification.driver_id, notification.user_id);
-            }
-        });
-
-        // Clear the entire notification queue
-        setNotifications([]);
     };
 
     const rejectNotification = (id: string, booking_id: string, driver_id: string, user_id: string) => {
-        console.log("Notification rejected.", id);
-
-        // Send rejection to the server with booking_id and driver_id
         if (notificationWs && driverId) {
             notificationWs.send(JSON.stringify({ driver_id, action: "driver.update.reject", status: "Rejected", booking_id, user_id }));
+            setNotifications((prev) => prev.filter((notification) => notification.id !== id));
         }
-
-        // Remove the rejected notification from the queue
-        setNotifications((prevNotifications) =>
-            prevNotifications.filter((notification) => notification.id !== id)
-        );
     };
 
     const goToCurrentBooking = () => {
-        if (!driverId) {
-            console.error("Driver ID is not available.");
-            return;
-        }
+        if (!driverId) return;
         axios.get(`${bookingsAPIURL}/booking/current/driver/${driverId}`)
             .then((response) => {
                 const booking = response.data;
                 if (booking && booking.id) {
                     window.location.href = `/book/${booking.id}`;
-                } else {
-                    console.log("No current booking available.");
                 }
             })
-            .catch((error) => {
-                console.error(error);
-            });
+            .catch((error) => console.error(error));
     };
 
-
-    const [bookings, setBookings] = useState<Booking[]>([]);
-
-  useEffect(() => {
-    if (driverId) {
-      axios
-        .get(`${bookingsAPIURL}/bookings?id=${driverId}&type=driver`)
-        .then((response) => {
-          setBookings(response.data);
-        })
-        .catch((error) => {
-          console.error(error);
-        });
-    }
-  }, [driverId]);
+    useEffect(() => {
+        if (driverId) {
+            axios.get(`${bookingsAPIURL}/bookings?id=${driverId}&type=driver`)
+                .then((response) => setBookings(response.data))
+                .catch((error) => console.error(error));
+        }
+    }, [driverId]);
 
     return (
         <ProtectedRoute element={
-            <div>
-                <h3>Location Tracker</h3>
-                <p>Latitude: {location.latitude}</p>
-                <p>Longitude: {location.longitude}</p>
+            <div className="p-6">
+                <h3 className="text-2xl font-bold mb-4">Location Tracker</h3>
+                <div className="mb-6 bg-white p-4 rounded-lg shadow-md">
+                    <p className="text-gray-700">Latitude: <span className="font-semibold">{location.latitude}</span></p>
+                    <p className="text-gray-700">Longitude: <span className="font-semibold">{location.longitude}</span></p>
+                </div>
 
-                <h3>Notifications</h3>
-                {notifications.length > 0 && notifications.map((notification) => (
-                    <div key={notification.id}>
-                        <p>Notification: {notification.message}</p>
-                        <button onClick={() => acceptNotification(notification.id, notification.booking_id, notification.driver_id, notification.user_id)}>Accept</button>
-                        <button onClick={() => rejectNotification(notification.id, notification.booking_id, notification.driver_id, notification.user_id)}>Reject</button>
-                    </div>
-                ))}
+                <h3 className="text-2xl font-bold mb-4">Notifications</h3>
+                {notifications.length > 0 ? (
+                    notifications.map((notification) => (
+                        <div key={notification.id} className="mb-4 p-4 bg-gray-100 rounded-lg shadow-md">
+                            {/* <p className="mb-2 text-gray-700">Message: <span className="font-semibold">{notification.message}</span></p> */}
+                            <div>
+                                <p>New Booking:</p>
+                                <p className="text-gray-700">Booking ID: {notification.booking_id}</p>
+                                <p className="text-gray-700">Driver ID: {notification.driver_id}</p>
+                                <p className="text-gray-700">User ID: {notification.user_id}</p>
+                            </div>
+                            <div className="flex space-x-4">
+                                <button
+                                    onClick={() => acceptNotification(notification.id, notification.booking_id, notification.driver_id, notification.user_id)}
+                                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                                >
+                                    Accept
+                                </button>
+                                <button
+                                    onClick={() => rejectNotification(notification.id, notification.booking_id, notification.driver_id, notification.user_id)}
+                                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                                >
+                                    Reject
+                                </button>
+                            </div>
+                        </div>
+                    ))
+                ) : (
+                    <p className="text-gray-500">No notifications available.</p>
+                )}
 
-                {notifications.length === 0 && <p>No notifications available.</p>}
+                <button
+                    onClick={goToCurrentBooking}
+                    className="mt-6 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                >
+                    Go to Current Booking
+                </button>
 
-                <button onClick={goToCurrentBooking}>Go to Current Booking</button>
-
-                <h3>All Bookings</h3>
-                {bookings && bookings.length > 0 && bookings.map((booking) => (
-                    <div key={booking.id}>
-                        <p>Booking ID: {booking.id}</p>
-                        <p>User ID: {booking.user_id}</p>
-                        <p>Driver ID: {booking.driver_id}</p>
-                        <p>Status: {booking.status}</p>
-                        <p>Source: {booking.source.coordinates[0]}, {booking.source.coordinates[1]}</p>
-                        <p>Destination: {booking.destination.coordinates[0]}, {booking.destination.coordinates[1]}</p>
-                        <p>Fare: {booking.fare}</p>
-                    </div>
-                ))}
-            </div> 
+                <h3 className="text-2xl font-bold mt-8 mb-4">All Bookings</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {bookings && bookings.length > 0 ? (
+                        bookings.map((booking) => (
+                            <div key={booking.id} className="flex items-center bg-white p-4 rounded-lg shadow-md">
+                                <div className="flex-grow">
+                                    <p className="text-gray-700"><span className="font-semibold">Booking ID:</span> {booking.id}</p>
+                                    <p className="text-gray-700"><span className="font-semibold">User ID:</span> {booking.user_id}</p>
+                                    <p className="text-gray-700"><span className="font-semibold">Driver ID:</span> {booking.driver_id}</p>
+                                    <p className="text-gray-700"><span className="font-semibold">Status:</span> {booking.status}</p>
+                                    <p className="text-gray-700"><span className="font-semibold">Source:</span> {booking.source.coordinates.join(', ')}</p>
+                                    <p className="text-gray-700"><span className="font-semibold">Destination:</span> {booking.destination.coordinates.join(', ')}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-gray-800 font-bold">${booking.fare}</p>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <p className="text-gray-500">No bookings available.</p>
+                    )}
+                </div>
+            </div>
         } />
     );
 };
