@@ -187,11 +187,11 @@ export default function User() {
             <form onSubmit={handleSubmit} className="mb-6 bg-white p-4 rounded-lg shadow-md">
               <div className="mb-4">
                 <label htmlFor="Source" className="block text-gray-700">Source</label>
-                <input type="text" id="Source" value={source} onChange={handleSourceChange} className="w-full p-2 border rounded" />
+                <input type="text" id="Source" value={source} onChange={handleSourceChange} className="w-full p-2 border rounded text-black" />
                 {sourceSuggestions.length > 0 && (
                   <ul className="mt-2 bg-white border rounded shadow-md">
                     {sourceSuggestions.map((suggestion, index) => (
-                      <li key={index} onClick={() => handleSourceClick(suggestion)} className="p-2 cursor-pointer hover:bg-gray-200">
+                      <li key={index} onClick={() => handleSourceClick(suggestion)} className="p-2 cursor-pointer hover:bg-gray-200 text-black">
                         {suggestion.description}
                       </li>
                     ))}
@@ -200,11 +200,11 @@ export default function User() {
               </div>
               <div className="mb-4">
                 <label htmlFor="Destination" className="block text-gray-700">Destination</label>
-                <input type="text" id="Destination" value={destination} onChange={handleDestinationChange} className="w-full p-2 border rounded" />
+                <input type="text" id="Destination" value={destination} onChange={handleDestinationChange} className="w-full p-2 border rounded text-black" />
                 {destinationSuggestions.length > 0 && (
                   <ul className="mt-2 bg-white border rounded shadow-md">
                     {destinationSuggestions.map((suggestion, index) => (
-                      <li key={index} onClick={() => handleDestinationClick(suggestion)} className="p-2 cursor-pointer hover:bg-gray-200">
+                      <li key={index} onClick={() => handleDestinationClick(suggestion)} className="p-2 cursor-pointer hover:bg-gray-200 text-black">
                         {suggestion.description}
                       </li>
                     ))}
