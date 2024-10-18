@@ -148,6 +148,14 @@ export default function Register() {
                         Register
                     </button>
                 </form>
+                <div className="mt-6 text-center">
+                    <p className="text-sm text-gray-600">
+                        Already have an account?{' '}
+                        <a href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+                            Login
+                        </a>
+                    </p>
+                </div>
             </div>
         </div>
     );
